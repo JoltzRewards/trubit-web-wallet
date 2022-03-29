@@ -5,10 +5,10 @@ import { AssetAvatar } from "@app/components/stx-avatar";
 import { Caption } from "@app/components/typography";
 import { useCurrentAccount } from "@app/store/accounts/account.hooks";
 import { useAssets, useBitcoinTokenState, useStxTokenState } from "@app/store/assets/asset.hooks";
-import { Box, color, Input, InputGroup, Stack, StackProps, Text } from "@stacks/ui";
+import { Box, ChevronIcon, color, Fade, Input, InputGroup, Stack, StackProps, Text } from "@stacks/ui";
 import { microStxToStx } from "@stacks/ui-utils";
 import { SendFormSelectors } from "@tests/page-objects/send-form.selectors";
-import { memo } from "react";
+import { memo, useState } from "react";
 import { useLimitsState, useReceiveTokenState, useSendAmountErrorState, useSendTokenState, useSendValueState } from "../hooks/swap-btc.hooks";
 import { formatMaxValue, formatMinValue, getPairName } from "../utils/utils";
 import { SendMaxButton } from "./send-max-button";
@@ -22,14 +22,21 @@ const SendAmountFieldBase = (props: AmountFieldProps) => {
   const account = useCurrentAccount()
   const stxToken = useStxTokenState(account ? account.address : '');
   const btcToken = useBitcoinTokenState();
-  const [sendToken, ] = useSendTokenState();
+  const [sendToken, setSendToken] = useSendTokenState();
   const [receiveToken, ] = useReceiveTokenState();
-  const [sendValue, ] = useSendValueState();
+  const [sendValue, setSendValue] = useSendValueState();
   const [sendAmountError, ] = useSendAmountErrorState();
   const stxBalance = useStxTokenState(account ? account.address : "");
   const placeholder = `0.000000 ${sendToken}`;
   const title = "You send"
   const [limits, ] = useLimitsState();
+  const [isOptionOpen, setIsOptionOpen] = useState(false);
+
+  const updateSendToken = (token: string) => {
+    setSendToken(token);
+    setIsOptionOpen(false);
+    setSendValue('');
+  }
 
   const getAvatar = () => {
     if (sendToken === 'STX') {
@@ -59,6 +66,7 @@ const SendAmountFieldBase = (props: AmountFieldProps) => {
         <LnBtcAvatar />
       )
     }
+    return null;
   }
 
   return (
@@ -103,8 +111,148 @@ const SendAmountFieldBase = (props: AmountFieldProps) => {
                 </Caption>
               </Stack>
             </Stack>
+            {
+              isOptionOpen
+              ?
+              <ChevronIcon 
+                direction="up"
+                size={8}
+                opacity={0.7}
+                _hover={{ cursor: 'pointer' }}
+                onClick={() => setIsOptionOpen(false)}
+              />
+              :
+              <ChevronIcon 
+                direction="down"
+                size={8}
+                opacity={0.7}
+                _hover={{ cursor: 'pointer' }}
+                onClick={() => setIsOptionOpen(true)}
+              />
+            }
           </SpaceBetween>
         </Box>
+        <Fade in={isOptionOpen}>
+          {
+            styles => (
+              <Stack
+                flexDirection="column"
+                boxShadow="0px 8px 16px rgba(27, 39, 51, 0.08);"
+                borderRadius="6px"
+                position="absolute"
+                width="100%"
+                top="90px"
+                maxHeight="230px"
+                border={isOptionOpen ? '1px solid' : 'none'}
+                borderColor={color('border')}
+                zIndex={1000}
+                overflow="auto"
+                style={styles}
+                bg={color('bg')}
+                p='tight'
+              >
+                <Box
+                  width="100%"
+                  userSelect="none"
+                  mb="tight"
+                  as='button'
+                  textAlign="left"
+                  _hover={{ backgroundColor: 'ink.150'}}
+                  p='base-tight'
+                  borderRadius='8px'
+                  onClick={() => updateSendToken('STX')}
+                >
+                  <Stack spacing="base"  isInline>
+                    <AssetAvatar
+                      useStx={true}
+                      useBtc={false}
+                      gradientString=""
+                      mr="tight"
+                      size="36px"
+                      color="white"
+                    />
+                    <Stack>
+                      <Text
+                        display='block'
+                        fontWeight='400'
+                        fontSize={2}
+                        color='ink.1000'
+                      >
+                        Stacks
+                      </Text>
+                      <Caption>
+                        STX
+                      </Caption>
+                    </Stack>
+                  </Stack>
+                </Box>
+                <Box
+                  width="100%"
+                  userSelect="none"
+                  mb="tight"
+                  as='button'
+                  textAlign="left"
+                  _hover={{ backgroundColor: 'ink.150'}}
+                  p='base-tight'
+                  borderRadius='8px'
+                  onClick={() => updateSendToken('BTC ⚡')}
+                >
+                  <Stack spacing="base"  isInline>
+                    <LnBtcAvatar />
+                    <Stack>
+                      <Text
+                        display='block'
+                        fontWeight='400'
+                        fontSize={2}
+                        color='ink.1000'
+                      >
+                        Bitcoin 
+                      </Text>
+                      <Caption>
+                        BTC ⚡
+                      </Caption>
+                    </Stack>
+                  </Stack>
+                </Box>
+                <Box
+                  width="100%"
+                  userSelect="none"
+                  mb="tight"
+                  as='button'
+                  textAlign="left"
+                  _hover={{ backgroundColor: 'ink.150'}}
+                  p='base-tight'
+                  borderRadius='8px'
+                  onClick={() => updateSendToken('BTC')}
+                >
+                  <Stack spacing="base"  isInline>
+                    <AssetAvatar
+                      useStx={false}
+                      useBtc={true}
+                      gradientString=""
+                      mr="tight"
+                      size="36px"
+                      color="white"
+                    />
+                    <Stack>
+                      <Text
+                        display='block'
+                        fontWeight='400'
+                        fontSize={2}
+                        color='ink.1000'
+                      >
+                        Bitcoin
+                      </Text>
+                      <Caption>
+                        BTC
+                      </Caption>
+                    </Stack>
+                  </Stack>
+                </Box>
+              </Stack>
+            )
+          }
+        </Fade>
         <Box position="relative">
           <Input
             display="block"
@@ -118,6 +266,7 @@ const SendAmountFieldBase = (props: AmountFieldProps) => {
             autoComplete="off"
             name="amount"
             onChange={(e) => onValueChange((e.target as HTMLInputElement).value)}
+            fontSize={2}
             // data-testid=""
           />
           {/* <SendMaxButton

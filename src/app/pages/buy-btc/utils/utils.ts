@@ -33,6 +33,10 @@ export const formatFees = (fees: any, rates: any, sendValue: string, sendToken: 
   sendToken = sendToken.split(" ")[0];
   receiveToken = receiveToken.split(" ")[0];
 
+  if (sendToken === receiveToken) {
+    return 0;
+  }
+
   if (fees.minerFees[sendToken]) {
     let pair = sendToken + '/' + receiveToken;
     let feePercentage = new BigNumber(fees.percentages[pair])
@@ -120,6 +124,7 @@ export const formatMaxValue = (limits: any, sendToken: string, receiveToken: str
 export const calculateReceiveValue = atom(
   null,
   (get, set) => {
+    // console.log('calculate receive value: ', sendToken, sendValue, receiveToken, receiveValue)
     let _sendValue = get(sendValue);
     if (isNaN(parseFloat(_sendValue))) {
       set(receiveValue, '')

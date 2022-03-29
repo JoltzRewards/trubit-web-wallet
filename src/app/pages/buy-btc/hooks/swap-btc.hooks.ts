@@ -708,13 +708,18 @@ export const broadcastLockStx = atom(
     const signer = new TransactionSigner(_transaction);
     signer.signOrigin(createStacksPrivateKey(account ? account.stxPrivateKey : ''));
     
-    if (_transaction) {
-      set(lockStxTxSubmitted, true);
-      const broadcastResponse = await broadcastTransaction(_transaction, network);
-      const txId = broadcastResponse.txid;
-      set(lockStxTxId, txId);
-      set(lockStxTxSubmitted, false);
-      set(previewLockStxVisibility, false);
+    try {
+      if (_transaction) {
+        set(lockStxTxSubmitted, true);
+        const broadcastResponse = await broadcastTransaction(_transaction, network);
+        const txId = broadcastResponse.txid;
+        set(lockStxTxId, txId);
+        set(lockStxTxSubmitted, false);
+        set(previewLockStxVisibility, false);
+      }
+    } catch (e) {
+      console.log(e);
+      console.log(e.message);
     }
   }
 )
