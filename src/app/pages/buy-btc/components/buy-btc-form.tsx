@@ -26,7 +26,6 @@ export const BuyBtcForm = () =>  {
   const [, _initLnSwap] = useAtom(initLnSwap);
   const [, _getPairs] = useAtom(getPairs);
   const [, _calculateReceiveValue] = useAtom(calculateReceiveValue);
-  const [, nextStep] = useAtom(navigateNextStep);
 
   useEffect(() => {
     _getPairs();
@@ -113,7 +112,7 @@ export const BuyBtcForm = () =>  {
             ?
             () => _initLnSwap(navigateToInsertAddressPage)
             :
-            () => _initSwap(() => nextStep(navigate))
+            () => _initSwap(navigateToInsertAddressPage)
           }
           isDisabled={
             sendValue === ''

@@ -16,6 +16,7 @@ import { currentStacksNetworkState } from "@app/store/network/networks";
 import { estimatedTxByteLength, serializedTxPayload, txOptions, unsignedTx } from "../store/ln-swap-btc.store";
 import { serializePayload } from "@stacks/transactions/dist/payload";
 import { RouteUrls } from "@shared/route-urls";
+import { SwapInfo, SwapResponse } from "../interfaces";
 
 // const lnswapApi = 'https://api.lnswap.org:9002';
 const lnswapApi = 'https://api.lnswap.org:9007';
@@ -357,11 +358,15 @@ export const navigateNextStep = atom(
 export const startSwap = atom(
   null,
   async (get, set, { 
-    nextStage, 
     setSwapStatus,
     setLockStxInfo,
-     
+    navigateSendSwapToken,
+    navigateReceiveSwapToken,
+    navigateClaimToken,
+    navigateTimelockExpired,
+    navigateEndSwap
   }) => {
+    console.log('start swap')
     set(loadingInitSwap, true);
     const url = `${lnswapApi}/zcreateswap`;
     let { pair, invoice, keys, preimageHash, quoteAmount, baseAmount } = get(swapTxData);
@@ -429,13 +434,22 @@ export const startSwap = atom(
       });
 
       // start listening for tx
-      let swapId = data.id;
-      startListeningForTx(swapId, setSwapStatus, nextStage);
+      const _swapResponse = get(swapResponse);
+      startListeningForTx(
+        _swapInfo, 
+        _swapResponse, 
+        navigateReceiveSwapToken,
+        navigateClaimToken,
+        navigateTimelockExpired,
+        navigateEndSwap,
+        setSwapStatus
+      );
 
       // set Lock Tx Info
       setLockStxInfo();
 
-      nextStage();
+      // handle navigation
+      navigateSendSwapToken();
     }).catch(err => {
       console.log("startSwap err: ", err);
       const message = err.response.data.error;
@@ -453,8 +467,17 @@ export const useSendSwapStatusState = () => {
   return useAtom(sendSwapStatus);
 }
 
-export const startListeningForTx = (swapId: string, setSwapStatus: any, nextStage: any) => {
-  const url = `${lnswapApi}/streamswapstatus?id=${swapId}`;
+export const startListeningForTx = (
+  swapInfo: SwapInfo, 
+  swapResponse: SwapResponse,
+  navigateReceiveSwapToken: any,
+  navigateClaimToken: any,
+  navigateTimelockExpired: any,
+  navigateEndSwap: any,
+  setSwapStatus: any,
+
+) => {
+  const url = `${lnswapApi}/streamswapstatus?id=${swapResponse.id}`;
   const source = new EventSource(url);
   console.log('start listening for tx...')
 
@@ -469,24 +492,63 @@ export const startListeningForTx = (swapId: string, setSwapStatus: any, nextStag
 
     const interval = setInterval(() => {
       postData(url, {
-        id: swapId,
+        id: swapResponse.id,
       }).then(response => {
         clearInterval(interval);
         console.log('Reconnected to LN Swap');
 
-        startListeningForTx(swapId, setSwapStatus, nextStage);
-        handleSwapStatus(response.data, setSwapStatus, source, nextStage);
+        startListeningForTx(
+          swapInfo, 
+          swapResponse, 
+          navigateReceiveSwapToken,
+          navigateClaimToken,
+          navigateTimelockExpired,
+          navigateEndSwap,
+          setSwapStatus
+        );
+
+        handleSwapStatus(
+          response.data, 
+          source, 
+          navigateReceiveSwapToken,
+          navigateClaimToken,
+          navigateTimelockExpired,
+          navigateEndSwap,
+          swapInfo,
+          swapResponse,
+          setSwapStatus
+        );
       })
 
     }, 1000);
   }
 
   source.onmessage = (event: any) => {
-    handleSwapStatus(JSON.parse(event.data), setSwapStatus, source, nextStage);
+    handleSwapStatus(
+      JSON.parse(event.data), 
+      source,
+      navigateReceiveSwapToken,
+      navigateClaimToken,
+      navigateTimelockExpired,
+      navigateEndSwap,
+      swapInfo,
+      swapResponse,
+      setSwapStatus
+    );
   }
 }
 
-export const handleSwapStatus = (data: any, setSwapStatus: any, source: any, nextStage: any) => {
+export const handleSwapStatus = (
+  data: any, 
+  source: any, 
+  navigateReceiveSwapToken: any,
+  navigateClaimToken: any,
+  navigateTimelockExpired: any,
+  navigateEndSwap: any,
+  swapInfo: SwapInfo,
+  swapResponse: SwapResponse,
+  setSwapStatus: any
+) => {
   const status = data.status;
   console.log('handleSwapStatus: ', data);
   
@@ -496,7 +558,7 @@ export const handleSwapStatus = (data: any, setSwapStatus: any, source: any, nex
         pending: true,
         message: "Waiting for invoice to be paid..."
       })
-      nextStage();
+      navigateReceiveSwapToken();
       break;
 
     case SwapUpdateEvent.InvoiceFailedToPay:
@@ -520,7 +582,7 @@ export const handleSwapStatus = (data: any, setSwapStatus: any, source: any, nex
     case SwapUpdateEvent.InvoicePaid:
     case SwapUpdateEvent.TransactionClaimed:
       source.close();
-      nextStage();
+      navigateEndSwap();
       break;
 
     case SwapUpdateEvent.ASTransactionMempool:
@@ -543,6 +605,8 @@ export const handleSwapStatus = (data: any, setSwapStatus: any, source: any, nex
         pending: true,
         message: 'Atomic Swap is ready'
       });
+      // kayak e disini 
+      navigateClaimToken();
       break;
 
     case SwapUpdateEvent.TransactionFailed:
@@ -712,6 +776,7 @@ export const broadcastLockStx = atom(
       if (_transaction) {
         set(lockStxTxSubmitted, true);
         const broadcastResponse = await broadcastTransaction(_transaction, network);
+        console.log('broadcastResponse: ', broadcastResponse)
         const txId = broadcastResponse.txid;
         set(lockStxTxId, txId);
         set(lockStxTxSubmitted, false);

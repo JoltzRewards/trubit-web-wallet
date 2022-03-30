@@ -61,9 +61,13 @@ export const InsertAddress = () => {
       }));
     } else {
       _checkSwapAddress(() => _startSwap({
-        nextStage: () => nextStep(navigate),
         setSwapStatus: (data: any) => setSwapStatus(data),
-        setLockStxInfo: _setLockStxInfo
+        setLockStxInfo: _setLockStxInfo,
+        navigateSendSwapToken: () => navigate(RouteUrls.SendSwapTx),
+        navigateReceiveSwapToken: () => navigate(RouteUrls.ReceiveSwapTx),
+        navigateClaimToken: () => navigate(RouteUrls.ClaimToken),
+        navigateTimelockExpired: () => navigate(RouteUrls.SendSwapTx),
+        navigateEndSwap: () => navigate(RouteUrls.EndSwap)
       }))
     }
   }

@@ -8,7 +8,7 @@ import { Box, Button, color, Stack, Text } from "@stacks/ui";
 import { microStxToStx, truncateMiddle } from "@stacks/ui-utils";
 import { useNavigate } from "react-router-dom";
 import { QrCode } from "../receive-tokens/components/address-qr-code";
-import { broadcastLockStx, useLockStxTxIdState, useLockStxTxSubmittedState, usePreviewLockStxVisibility, useSendSwapResponseState, useSendSwapStatusState, useSendTokenState, useSwapStepState } from "./hooks/swap-btc.hooks";
+import { broadcastLockStx, useLockStxTxIdState, useLockStxTxSubmittedState, usePreviewLockStxVisibility, useReceiveTokenState, useSendSwapResponseState, useSendSwapStatusState, useSendTokenState, useSwapStepState } from "./hooks/swap-btc.hooks";
 import { FiCopy } from 'react-icons/fi';
 import { useLnSwapResponseState, useLnSwapStatusState, useTxOptionsState } from "./hooks/ln-swap-btc.hooks";
 import { useAtom } from "jotai";
@@ -90,17 +90,19 @@ const BtcLnContractContent = () => {
 
 const StxContractContent = () => {
   const [sendSwapResponse, ] = useSendSwapResponseState();
+  const [receiveToken, ] = useReceiveTokenState();
   const [, _broadcastLockStx] = useAtom(broadcastLockStx);
   const [txOptions, ] = useTxOptionsState();
   const [previewLockStxVisibility, setPreviewLockStxVisibility] = usePreviewLockStxVisibility();
   const [lockStxTxSubmitted, ] = useLockStxTxSubmittedState();
   const [lockStxTxId, ] = useLockStxTxIdState();
   const { handleOpenTxLink } = useExplorerLink();
+  const stxAmount = receiveToken === 'BTC' ? sendSwapResponse.baseAmount : microStxToStx((sendSwapResponse.expectedAmount / 100).toFixed(6))
 
   return (
     <>
       <Text textAlign={['left', 'center']}>
-        You need to lock <Text fontWeight='bold'>{microStxToStx((sendSwapResponse.expectedAmount / 100).toFixed(6))} STX</Text> to this contract:
+        You need to lock <Text fontWeight='bold'>{stxAmount} STX</Text> to this contract:
       </Text>
       <Box
         width="100%"
@@ -141,7 +143,7 @@ const StxContractContent = () => {
         <Text>Lock STX</Text>
       </Button>
       <CallContractConfirmDrawer
-        amount={microStxToStx((sendSwapResponse.expectedAmount / 100).toFixed(8))}
+        amount={stxAmount}
         onBroadcastTx={_broadcastLockStx}
         txOptions={txOptions}
         title={'Lock STX'}

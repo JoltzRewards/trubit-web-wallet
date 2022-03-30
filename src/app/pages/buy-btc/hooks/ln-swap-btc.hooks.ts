@@ -172,6 +172,7 @@ export const startLnSwap = atom(
     navigateTimelockExpired,
     navigateEndSwap
   }) => {
+    console.log('start reverse swap')
     set(loadingInitSwap, true);
     const url = `${lnSwapApi}/zcreateswap`;
     const { pair, keys, baseAmount, address, preimageHash } = get(lnSwapInfo);
@@ -481,6 +482,7 @@ export const broadcastClaimToken = atom(
     if (_transaction) {
       set(claimStxTxSubmitted, true);
       const broadcastResponse = await broadcastTransaction(_transaction, network);
+      console.log('broadcastResponse: ', broadcastResponse)
       const txId = broadcastResponse.txid;
       set(claimTokenTxId, txId);
       set(claimStxTxSubmitted, false);
