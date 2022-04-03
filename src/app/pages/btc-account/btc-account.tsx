@@ -9,9 +9,9 @@ import { CurrentBtcAccountName } from "@app/features/btc-account/current-btc-acc
 import { CurrentAccountAvatar } from "@app/features/current-account/current-account-avatar";
 import { useCurrentAccount } from "@app/store/accounts/account.hooks";
 import { RouteUrls } from "@shared/route-urls";
-import { Box, color, Stack, StackProps, useClipboard } from "@stacks/ui";
+import { Box, color, Stack, StackProps, useClipboard, Text } from "@stacks/ui";
 import { UserAreaSelectors } from "@tests/integration/user-area.selectors";
-import { memo, Suspense } from "react";
+import { memo, Suspense, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { AccountInfoFetcher, BalanceFetcher } from "../home/components/fetchers";
 import { FiCopy } from 'react-icons/fi';
@@ -24,6 +24,11 @@ import { useStxTokenState } from "@app/store/assets/asset.hooks";
 import { AssetRow } from "@app/components/asset-row";
 import { BtcAccountTabs } from "./components/btc-account-tabs";
 import { BtcActivityList } from "../btc-activity/btc-activity-list";
+import { BaseDrawer } from "@app/components/drawer";
+import { PrimaryButton } from "@app/components/primary-button";
+import { Switch } from "@app/components/switch";
+import { BitcoinRewardsNotice } from "../btc-rewards/components/BitcoinRewardsNotice";
+import { useBitcoinRewardsNoticeVisibilityState } from "../btc-rewards/hooks/btc-rewards.hooks";
 
 export const AccountAddress = memo((props: StackProps) => {
   const currentAccount = useCurrentAccount();
@@ -57,8 +62,13 @@ export const BitcoinAccount = () => {
   const navigate = useNavigate();
   const account = useCurrentAccount();
   const stxToken = useStxTokenState(account ? account.address : "");
+  const [, setBitcoinRewardsNoticeVisibility] = useBitcoinRewardsNoticeVisibilityState();
   
   useRouteHeader(<Header title="Bitcoin" onClose={() => navigate(RouteUrls.Home)} />);
+
+  useEffect(() => {
+    setBitcoinRewardsNoticeVisibility(true);
+  }, [])
 
   return (
     <>
@@ -92,6 +102,7 @@ export const BitcoinAccount = () => {
           activity={<BtcActivityList />}
         />
       </Stack>
+      <BitcoinRewardsNotice />
     </>
   )
 }

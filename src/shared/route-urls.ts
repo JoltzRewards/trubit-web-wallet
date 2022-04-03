@@ -23,6 +23,8 @@ export enum RouteUrls {
   Bitcoin = '/bitcoin',
   BuyBitcoin = '/buy-bitcoin',
   ReceiveBitcoin = '/receive-bitcoin',
+  BitcoinRewards = '/bitcoin-rewards',
+  BitcoinRewardsLearnMore = '/bitcoin-rewards-learn-more',
   // Swap Bitcoin
   InsertAddress = '/insert-address',
   SendSwapTx = '/send-swap-tx',

@@ -1,5 +1,6 @@
 import { memo, useCallback, useRef } from 'react';
-import { FiArrowUp, FiPlus } from 'react-icons/fi';
+import { FiArrowUp, FiPlus, FiGift } from 'react-icons/fi';
+import { GrPowerCycle } from 'react-icons/gr';
 import { useNavigate } from 'react-router-dom';
 import { Box, Button, ButtonProps } from '@stacks/ui';
 
@@ -61,6 +62,33 @@ export const ReceiveTxButton: React.FC<ButtonProps> = memo(({ ...rest }) => {
   );
 });
 
+export const RewardButton: React.FC<ButtonProps> = memo(({ ...rest }) => {
+  const ref = useRef<HTMLButtonElement | null>(null);
+  const navigate = useNavigate();
+
+  const handleClick = useCallback(() => navigate(RouteUrls.BitcoinRewards), [navigate]);
+  return (
+    <Button
+      size="sm"
+      pl="base-tight"
+      pr={'base'}
+      py="tight"
+      fontSize={2}
+      mode="primary"
+      position="relative"
+      ref={ref}
+      onClick={handleClick}
+      borderRadius="10px"
+      {...rest}
+    >
+      <Box as={FiGift} size="14px" mr="2px" />
+      <Box as="span" ml="extra-tight" fontSize="14px">
+        Reward
+      </Box>
+    </Button>
+  );
+});
+
 export const BuyTxButton: React.FC<ButtonProps> = memo(({ ...rest }) => {
   const ref = useRef<HTMLButtonElement | null>(null);
   const navigate = useNavigate();
@@ -81,9 +109,9 @@ export const BuyTxButton: React.FC<ButtonProps> = memo(({ ...rest }) => {
       borderRadius="10px"
       {...rest}
     >
-      <Box as={FiPlus} transform={'scaleY(-1)'} size={'14px'} mr={'2px'} />
+      <Box as={FiPlus} size={'14px'} mr={'2px'} />
       <Box as="span" ml="extra-tight" fontSize="14px">
-        Buy
+        Swap
       </Box>
     </Button>
   );
