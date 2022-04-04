@@ -1,5 +1,4 @@
 import { StacksTransaction, UnsignedContractCallOptions } from "@stacks/transactions";
-import BigNumber from "bignumber.js";
 import { atom } from "jotai";
 import { LnSwapInfo, LnSwapResponse } from "../interfaces";
 
@@ -44,10 +43,13 @@ export const lockupTokenTx = atom({
   success: false
 })
 
-export const claimTokenTxId = atom('');
-export const previewClaimStxVisibility = atom(false);
-export const claimStxTxSubmitted = atom(false);
-export const txOptions = atom<UnsignedContractCallOptions | undefined>(undefined);
-export const unsignedTx = atom<StacksTransaction | undefined>(undefined);
-export const serializedTxPayload = atom<string>('');
-export const estimatedTxByteLength = atom<number>(0);
+// reverse claim token tx
+export const reverseClaimTokenTxId = atom('');
+export const reverseClaimStxTxSubmitted = atom(false);
+export const previewReverseClaimStxVisibility = atom(false);
+
+// reverse swap tx info
+export const reverseTxOptions = atom<UnsignedContractCallOptions | undefined>(undefined);
+export const unsignedReverseTx = atom<StacksTransaction | undefined>(undefined);
+export const serializedReverseTxPayload = atom<string>('');
+export const estimatedReverseTxByteLength = atom<number>(0);

@@ -9,8 +9,8 @@ import { Box, Button, Input, Stack, Text } from "@stacks/ui"
 import { useAtom } from "jotai"
 import { useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import { checkLnSwapAddress, setClaimStxInfo, startLnSwap, useLnSwapStatusState, useLockupTokenTxState } from "./hooks/ln-swap-btc.hooks"
-import { checkSwapAddress, navigateNextStep, setLockStxInfo, startSwap, useLoadingInitSwapState, useReceiveTokenAddressState, useReceiveTokenState, useReceiveValueState, useSendSwapStatusState, useSendTokenState, useSwapStepState } from "./hooks/swap-btc.hooks"
+import { checkLnSwapAddress, setReverseClaimStxInfo, startLnSwap, useLnSwapStatusState, useLockupTokenTxState } from "./hooks/ln-swap-btc.hooks"
+import { checkSwapAddress, setClaimStxInfo, navigateNextStep, setLockStxInfo, startSwap, useLoadingInitSwapState, useReceiveTokenAddressState, useReceiveTokenState, useReceiveValueState, useSendSwapStatusState, useSendTokenState, useSwapStepState } from "./hooks/swap-btc.hooks"
 import { convertBtcToSatoshis } from "./utils/utils"
 
 export const InsertAddress = () => {
@@ -29,6 +29,7 @@ export const InsertAddress = () => {
   const [, setLnSwapStatus] = useLnSwapStatusState();
   const [, setLockupTokenTx] = useLockupTokenTxState();
   const [, _setLockStxInfo] = useAtom(setLockStxInfo);
+  const [, _setReverseClaimStxInfo] = useAtom(setReverseClaimStxInfo);
   const [, _setClaimStxInfo] = useAtom(setClaimStxInfo);
   const [, nextStep] = useAtom(navigateNextStep);
   const [step, ] = useSwapStepState();
@@ -52,7 +53,7 @@ export const InsertAddress = () => {
       _checkLnSwapAddress(() => _startLnSwap({
         setSwapStatus: (data: any) => setLnSwapStatus(data),
         setLockupTokenTx: (data: any) => setLockupTokenTx(data),
-        setClaimStxInfo: _setClaimStxInfo,
+        setClaimStxInfo: _setReverseClaimStxInfo,
         navigateSendSwapToken: () => navigate(RouteUrls.SendSwapTx),
         navigateReceiveSwapToken: () => navigate(RouteUrls.ReceiveSwapTx),
         navigateClaimToken: () => navigate(RouteUrls.ClaimToken),
@@ -63,6 +64,7 @@ export const InsertAddress = () => {
       _checkSwapAddress(() => _startSwap({
         setSwapStatus: (data: any) => setSwapStatus(data),
         setLockStxInfo: _setLockStxInfo,
+        setClaimStxInfo: _setClaimStxInfo,
         navigateSendSwapToken: () => navigate(RouteUrls.SendSwapTx),
         navigateReceiveSwapToken: () => navigate(RouteUrls.ReceiveSwapTx),
         navigateClaimToken: () => navigate(RouteUrls.ClaimToken),

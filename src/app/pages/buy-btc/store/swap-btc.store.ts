@@ -1,3 +1,4 @@
+import { StacksTransaction, UnsignedContractCallOptions } from "@stacks/transactions";
 import { atom } from "jotai";
 import { SwapResponse } from "../interfaces";
 
@@ -79,7 +80,7 @@ export const sendSwapResponse = atom({
   acceptZeroConf: false,
   address: '',
   asTimeoutBlockHeight: 0,
-  baseAmount: '',
+  baseAmount: 0,
   bip21: '',
   claimAddress: '',
   contractAddress: '',
@@ -96,8 +97,26 @@ export const sendSwapContractAddress = atom('');
 export const sendSwapBitcoinAddress = atom('');
 export const sendSwapStatus = atom({
   pending: true,
-  message: "Waiting for one confirmation..."
+  message: "Waiting for one confirmation...",
+  error: false,
+  transaction: {
+    hex: '',
+    id: ''
+  }
 })
+
+// claim STX tx
+export const claimStxTxId = atom('');
+export const claimStxTxSubmitted = atom(false);
+export const previewClaimStxVisibility = atom(false);
+
+// lock STX tx
 export const lockStxTxId = atom('');
-export const previewLockStxVisibility = atom(false);
 export const lockStxTxSubmitted = atom(false);
+export const previewLockStxVisibility = atom(false);
+
+// swap tx info
+export const txOptions = atom<UnsignedContractCallOptions | undefined>(undefined);
+export const unsignedTx = atom<StacksTransaction | undefined>(undefined);
+export const serializedTxPayload = atom<string>('');
+export const estimatedTxByteLength = atom<number>(0);

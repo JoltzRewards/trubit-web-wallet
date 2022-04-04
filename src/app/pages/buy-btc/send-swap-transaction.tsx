@@ -4,13 +4,13 @@ import { CENTERED_FULL_PAGE_MAX_WIDTH } from "@app/components/global-styles/full
 import { Header } from "@app/components/header";
 import { SpaceBetween } from "@app/components/space-between";
 import { RouteUrls } from "@shared/route-urls";
-import { Box, Button, color, Stack, Text } from "@stacks/ui";
+import { Box, Button, color, Stack, Text, useClipboard } from "@stacks/ui";
 import { microStxToStx, truncateMiddle } from "@stacks/ui-utils";
 import { useNavigate } from "react-router-dom";
 import { QrCode } from "../receive-tokens/components/address-qr-code";
-import { broadcastLockStx, useLockStxTxIdState, useLockStxTxSubmittedState, usePreviewLockStxVisibility, useReceiveTokenState, useSendSwapResponseState, useSendSwapStatusState, useSendTokenState, useSwapStepState } from "./hooks/swap-btc.hooks";
+import { broadcastLockStx, useLockStxTxIdState, useLockStxTxSubmittedState, usePreviewLockStxVisibility, useReceiveTokenState, useSendSwapResponseState, useSendSwapStatusState, useSendTokenState, useSwapStepState, useTxOptionsState } from "./hooks/swap-btc.hooks";
 import { FiCopy } from 'react-icons/fi';
-import { useLnSwapResponseState, useLnSwapStatusState, useTxOptionsState } from "./hooks/ln-swap-btc.hooks";
+import { useLnSwapResponseState, useLnSwapStatusState } from "./hooks/ln-swap-btc.hooks";
 import { useAtom } from "jotai";
 import { CallContractConfirmDrawer } from "./components/call-contract-confirm-drawer";
 import { Caption } from "@app/components/typography";
@@ -53,6 +53,12 @@ export const SendSwapTransaction = () => {
 const BtcLnContractContent = () => {
   const [lnSwapResponse, ] = useLnSwapResponseState();
   const [lnSwapStatus, ] = useLnSwapStatusState();
+  const { onCopy, hasCopied } = useClipboard(lnSwapResponse.invoice);
+
+  const copyToClipboard = () => {
+    console.log(`copy ${lnSwapResponse.invoice} to clipboard`)
+    onCopy();
+  }
 
   return (
     <>
@@ -77,6 +83,7 @@ const BtcLnContractContent = () => {
           <FiCopy 
             cursor='pointer'
             opacity={0.7}
+            onClick={copyToClipboard}
           />
         </SpaceBetween>
       </Box>
@@ -97,7 +104,8 @@ const StxContractContent = () => {
   const [lockStxTxSubmitted, ] = useLockStxTxSubmittedState();
   const [lockStxTxId, ] = useLockStxTxIdState();
   const { handleOpenTxLink } = useExplorerLink();
-  const stxAmount = receiveToken === 'BTC' ? sendSwapResponse.baseAmount : microStxToStx((sendSwapResponse.expectedAmount / 100).toFixed(6))
+  const stxAmount = receiveToken === 'BTC' ? sendSwapResponse.baseAmount : microStxToStx(sendSwapResponse.expectedAmount / 100);
+  console.log(sendSwapResponse.expectedAmount, microStxToStx(sendSwapResponse.expectedAmount / 100))
 
   return (
     <>

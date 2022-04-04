@@ -67,7 +67,7 @@ export const BitcoinAccount = () => {
   useRouteHeader(<Header title="Bitcoin" onClose={() => navigate(RouteUrls.Home)} />);
 
   useEffect(() => {
-    setBitcoinRewardsNoticeVisibility(true);
+    // setBitcoinRewardsNoticeVisibility(true);
   }, [])
 
   return (

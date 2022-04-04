@@ -14,6 +14,7 @@ export const SwapUpdateEvent = {
   TransactionClaimed: 'transaction.claimed',
   TransactionRefunded: 'transaction.refunded',
   TransactionConfirmed: 'transaction.confirmed',
+  TransactionLockupFailed: 'transaction.lockupFailed',
 
   ASTransactionFailed: 'astransaction.failed',
   ASTransactionMempool: 'astransaction.mempool',
@@ -21,7 +22,6 @@ export const SwapUpdateEvent = {
   ASTransactionRefunded: 'astransaction.refunded',
   ASTransactionConfirmed: 'astransaction.confirmed',
 
-  LockupFailed: 'lockup,failed',
   
   SwapExpired: 'swap.expired',
 
@@ -62,5 +62,10 @@ export const postData = async (url = '', data = {}) => {
     body: JSON.stringify(data)
   })
   console.log(response);
+  return response.json();
+}
+
+export const getData = async (url = '') => {
+  const response = await fetch(url);
   return response.json();
 }
