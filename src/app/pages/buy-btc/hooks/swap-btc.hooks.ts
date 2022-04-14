@@ -17,6 +17,7 @@ import { serializePayload } from "@stacks/transactions/dist/payload";
 import { RouteUrls } from "@shared/route-urls";
 import { SwapInfo, SwapResponse } from "../interfaces";
 import { detectSwap, constructClaimTransaction } from 'boltz-core';
+import { currentAccountNonceState } from "@app/store/accounts/nonce";
 
 // const lnswapApi = 'https://api.lnswap.org:9002';
 const lnswapApi = 'https://api.lnswap.org:9007';
@@ -460,9 +461,15 @@ export const startSwap = atom(
         timeoutBlockHeight: data.timeoutBlockHeight
       }
       console.log('refundObj', refundObject);
-      set(currentAccountSubmittedBtcTxsState, {
-        [data.id]: refundObject
-      });
+      // set(currentAccountSubmittedBtcTxsState, {
+      //   [data.id]: refundObject
+      // });
+
+      const setTxHistory = (id: string, refundObject: RefundInfo) => {
+        set(currentAccountSubmittedBtcTxsState, {
+          [id]: refundObject
+        })
+      }
 
       // start listening for tx
       // const _swapResponse = get(swapResponse);
@@ -473,7 +480,8 @@ export const startSwap = atom(
         navigateClaimToken,
         navigateTimelockExpired,
         navigateEndSwap,
-        setSwapStatus
+        setSwapStatus,
+        setTxHistory
       );
 
       // set Lock Tx Info
@@ -710,16 +718,13 @@ export const startListeningForTx = (
   navigateTimelockExpired: any,
   navigateEndSwap: any,
   setSwapStatus: any,
-
+  setTxHistory: any
 ) => {
   const url = `${lnswapApi}/streamswapstatus?id=${swapResponse.id}`;
   const source = new EventSource(url);
   console.log('start listening for tx...')
   console.log('txid: ', swapResponse.id)
 
-  // setTimeout(() => {
-  //   handleSwapStatus({ status: SwapUpdateEvent.TransactionConfirmed }, setSwapStatus);
-  // }, 5000);
   source.onerror = () => {
     source.close();
 
@@ -740,7 +745,8 @@ export const startListeningForTx = (
           navigateClaimToken,
           navigateTimelockExpired,
           navigateEndSwap,
-          setSwapStatus
+          setSwapStatus,
+          setTxHistory
         );
 
         handleSwapStatus(
@@ -752,7 +758,8 @@ export const startListeningForTx = (
           navigateEndSwap,
           swapInfo,
           swapResponse,
-          setSwapStatus
+          setSwapStatus,
+          setTxHistory
         );
       })
 
@@ -769,7 +776,8 @@ export const startListeningForTx = (
       navigateEndSwap,
       swapInfo,
       swapResponse,
-      setSwapStatus
+      setSwapStatus,
+      setTxHistory
     );
   }
 }
@@ -781,9 +789,10 @@ export const handleSwapStatus = (
   navigateClaimToken: any,
   navigateTimelockExpired: any,
   navigateEndSwap: any,
-  swapInfo: SwapInfo,
-  swapResponse: SwapResponse,
-  setSwapStatus: any
+  swapInfo: any,
+  swapResponse: any,
+  setSwapStatus: any,
+  setTxHistory: any
 ) => {
   const status = data.status;
   console.log('handleSwapStatus: ', data);
@@ -849,6 +858,44 @@ export const handleSwapStatus = (
         swapStatusObj.transaction = data.transaction;
       }
       setSwapStatus(swapStatusObj);
+
+      // if BTC payment is in mempool, then add to tx history
+      if (swapInfo.quote === 'BTC' && !swapInfo.invoice?.toLowerCase().startsWith('lnbc')) {
+        let refundObject: RefundInfo = {
+          amount: parseInt((parseFloat(swapResponse.expectedAmount) / 100).toString()),
+          contract: swapResponse.address,
+          currency: swapInfo.base,
+          privateKey: swapInfo.keys.privateKey,
+          preimageHash: swapInfo.preimageHash,
+          redeemScript: swapResponse.redeemScript,
+          // swapInfo: {
+          //   base: swapInfo.base,
+          //   baseAmount: swapInfo.baseAmount,
+          //   invoice: swapInfo.invoice,
+          //   keys: swapInfo.keys,
+          //   pair: swapInfo.pair,
+          //   preimage: swapInfo.preimage,
+          //   preimageHash: swapInfo.preimageHash,
+          //   quote: swapInfo.quote,
+          //   quoteAmount: swapInfo.quoteAmount
+          // },
+          // swapResponse: {
+          //   acceptZeroConf: false,
+          //   address: swapResponse.address,
+          //   claimAddress: swapResponse.claimAddress,
+          //   expectedAmount: swapResponse.expectedAmount,
+          //   id: swapResponse.id,
+          //   redeemScript: '',
+          //   timeoutBlockHeight: swapResponse.timeoutBlockHeight
+          // },
+          swapInfo: swapInfo,
+          swapResponse: swapResponse,
+          timeoutBlockHeight: swapResponse.timeoutBlockHeight
+        }
+        console.log('refundObj', refundObject);
+        setTxHistory(swapResponse.id, refundObject);
+      }
+
       break;
 
     case SwapUpdateEvent.ASTransactionConfirmed:
@@ -1018,6 +1065,7 @@ export const setLockStxInfo = atom(
 
     const account = get(currentAccountState);
     const network = get(currentStacksNetworkState);
+    const _nonce = get(currentAccountNonceState);
     let _txOptions: UnsignedContractCallOptions = {
       contractAddress: contractAddress,
       contractName: contractName,
@@ -1026,7 +1074,8 @@ export const setLockStxInfo = atom(
       publicKey: publicKeyToString(pubKeyfromPrivKey(account ? account.stxPrivateKey : '')),
       network: network,
       postConditions: postConditions,
-      anchorMode: AnchorMode.Any
+      anchorMode: AnchorMode.Any,
+      nonce: new BN(_nonce, 10)
     }
     console.log('txOptions: ', txOptions);
     const transaction = await makeUnsignedContractCall(_txOptions);
@@ -1047,6 +1096,27 @@ export const broadcastLockStx = atom(
     if (_transaction === undefined) {
       return;
     }
+    let swapInfo: any = get(swapTxData);
+    let _swapResponse: any = get(sendSwapResponse);
+    console.log('broadcast lock stx', swapInfo, _swapResponse)
+
+    if (swapInfo) {
+      let refundObject: RefundInfo = {
+        amount: parseInt((_swapResponse.expectedAmount / 100).toString()),
+        contract: _swapResponse.address,
+        currency: swapInfo.base,
+        privateKey: swapInfo.keys.privateKey,
+        preimageHash: swapInfo.preimageHash,
+        redeemScript: _swapResponse.redeemScript,
+        swapInfo: swapInfo,
+        swapResponse: _swapResponse,
+        timeoutBlockHeight: _swapResponse.timeoutBlockHeight
+      }
+      console.log('refundObj', refundObject);
+      set(currentAccountSubmittedBtcTxsState, {
+        [_swapResponse.id]: refundObject
+      });
+    }
 
     console.log('found tx')
     const network = get(currentStacksNetworkState);
@@ -1054,6 +1124,7 @@ export const broadcastLockStx = atom(
     const signer = new TransactionSigner(_transaction);
     signer.signOrigin(createStacksPrivateKey(account ? account.stxPrivateKey : ''));
     
+    // need to check for failed broadcast tx
     if (_transaction) {
       set(lockStxTxSubmitted, true);
       const broadcastResponse = await broadcastTransaction(_transaction, network);

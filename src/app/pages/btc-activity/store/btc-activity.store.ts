@@ -6,6 +6,7 @@ import { atom } from "jotai";
 import { atomFamily, atomWithStorage } from "jotai/utils";
 import deepEqual from 'fast-deep-equal';
 import { SwapInfo, SwapResponse } from "@app/pages/buy-btc/interfaces";
+import { StacksTransaction, UnsignedContractCallOptions } from "@stacks/transactions";
 
 type LocalBitcoinTx = Record<string, RefundInfo>;
 
@@ -13,17 +14,27 @@ export interface RefundInfo {
   amount: number;
   contract: string;
   currency: string;
-  preimageHash: string;
+  preimageHash: string | any;
   privateKey: string;
   redeemScript: string;
   swapInfo: SwapInfo;
-  swapResponse: SwapResponse;
+  swapResponse: any;
   timeoutBlockHeight: number;
 }
 
+// export interface LnRefundInfo {
+//   amount: number;
+//   contract: string;
+//   currency: string;
+//   preimageHash: string;
+//   privateKey: string;
+//   redeemScript: string;
+//   swapInfo: 
+// }
+
 const currentAccountSubmittedBtcTxsRootState = atomFamily(
   ([_address, _network]: [string, string]) => 
-    atomWithStorage<LocalBitcoinTx>(makeLocalDataKey([_address, _network, 'LOCAL_BTC_TXS']), {}),
+    atomWithStorage<LocalBitcoinTx>(makeLocalDataKey([_address, _network, 'LOCAL_TEST_LNSWAP_TXS']), {}),
   deepEqual
 )
 
@@ -48,3 +59,29 @@ export const currentAccountSubmittedBtcTxsState = atom<LocalBitcoinTx, LocalBitc
     set(submittedTxsState, { ...newItem, ...latestLocalTxs });
   }
 )
+
+export const activityListDrawerVisibility = atom(false);
+export const selectedRefundInfo = atom<RefundInfo | undefined>(undefined);
+
+// refund swap status
+export const selectedRefundSwapStatus = atom({
+  error: false,
+  pending: false,
+  message: '',
+  loading: false,
+  canRefund: false
+})
+
+// refund stx info
+export const refundStxTxId = atom('');
+export const refundStxTxSubmitted = atom(false);
+export const previewRefundStxVisibility = atom(false);
+export const refundTxOptions = atom<UnsignedContractCallOptions | undefined>(undefined);
+export const unsignedRefundTx = atom<StacksTransaction | undefined>(undefined);
+export const serializedRefundTxPayload = atom<string>('');
+export const estimatedRefundTxByteLength = atom<number>(0);
+
+// refund btc info
+export const refundBtcTxId = atom('');
+export const refundBtcTxSubmitted = atom(false);
+export const previewRefundBtcVisibility = atom(false);

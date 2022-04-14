@@ -1,3 +1,4 @@
+import { currentAccountSubmittedBtcTxsState, RefundInfo } from "@app/pages/btc-activity/store/btc-activity.store";
 import { currentAccountState } from "@app/store/accounts";
 import { currentStacksNetworkState } from "@app/store/network/networks";
 import { AnchorMode, broadcastTransaction, bufferCV, createStacksPrivateKey, FungibleConditionCode, makeContractSTXPostCondition, makeUnsignedContractCall, PostConditionMode, pubKeyfromPrivKey, publicKeyToString, SignedContractCallOptions, TransactionSigner, uintCV, UnsignedContractCallOptions } from "@stacks/transactions";
@@ -190,6 +191,12 @@ export const startLnSwap = atom(
     }
     console.log('body', body);
 
+    const setTxHistory = (id: string, refundObject: RefundInfo) => {
+      set(currentAccountSubmittedBtcTxsState, {
+        [id]: refundObject
+      })
+    }
+
     postData(url, body).then(data => {
       set(loadingInitSwap, false);
   
@@ -213,7 +220,8 @@ export const startLnSwap = atom(
         navigateTimelockExpired,
         navigateEndSwap,
         setSwapStatus,
-        setLockupTokenTx
+        setLockupTokenTx,
+        setTxHistory
       )
 
       // set claimStx info
@@ -237,7 +245,8 @@ const startListeningForTx = (
   navigateTimelockExpired: any,
   navigateEndSwap: any,
   setSwapStatus: any,
-  setLockupTokenTx: any
+  setLockupTokenTx: any,
+  setTxHistory: any
 ) => {
   console.log('start listening for tx...')
   const source = new EventSource(`${lnSwapApi}/streamswapstatus?id=${swapResponse.id}`);
@@ -264,7 +273,8 @@ const startListeningForTx = (
           navigateTimelockExpired,
           navigateEndSwap,
           setSwapStatus,
-          setLockupTokenTx
+          setLockupTokenTx,
+          setTxHistory
         );
 
         handleReverseSwapStatus(
@@ -277,7 +287,8 @@ const startListeningForTx = (
           swapInfo,
           swapResponse,
           setSwapStatus,
-          setLockupTokenTx
+          setLockupTokenTx,
+          setTxHistory
         )
       }).catch(err => {
         console.log(err);
@@ -296,7 +307,8 @@ const startListeningForTx = (
       swapInfo,
       swapResponse,
       setSwapStatus,
-      setLockupTokenTx
+      setLockupTokenTx,
+      setTxHistory
     )
   }
 }
@@ -308,10 +320,11 @@ const handleReverseSwapStatus = (
   navigateClaimToken: any,
   navigateTimelockExpired: any,
   navigateEndSwap: any,
-  swapInfo: LnSwapInfo,
-  swapResponse: LnSwapResponse,
+  swapInfo: any,
+  swapResponse: any,
   setSwapStatus: any,
-  setLockupTokenTx: any
+  setLockupTokenTx: any,
+  setTxHistory: any
 ) => {
   const status = data.status;
   console.log('handleReverseSwapStatus: ', status);
@@ -324,6 +337,41 @@ const handleReverseSwapStatus = (
         success: true
       })
       navigateReceiveSwapToken();
+
+      // if LN payment is in mempool, then add to tx history
+      if (swapInfo.invoice?.toLowerCase().startsWith('lnbc')) {
+        let refundObject: RefundInfo = {
+          amount: parseInt((parseFloat(swapResponse.expectedAmount) / 100).toString()),
+          contract: swapResponse.address,
+          currency: swapInfo.base,
+          privateKey: swapInfo.keys.privateKey,
+          preimageHash: swapInfo.preimageHash,
+          redeemScript: swapResponse.redeemScript,
+          swapInfo: {
+            base: swapInfo.base,
+            baseAmount: swapInfo.baseAmount,
+            invoice: swapInfo.invoice,
+            keys: swapInfo.keys,
+            pair: swapInfo.pair,
+            preimage: swapInfo.preimage,
+            preimageHash: swapInfo.preimageHash,
+            quote: swapInfo.quote,
+            quoteAmount: swapInfo.quoteAmount
+          },
+          swapResponse: {
+            acceptZeroConf: false,
+            address: swapResponse.address,
+            claimAddress: swapResponse.claimAddress,
+            expectedAmount: swapResponse.expectedAmount,
+            id: swapResponse.id,
+            redeemScript: '',
+            timeoutBlockHeight: swapResponse.timeoutBlockHeight
+          },
+          timeoutBlockHeight: swapResponse.timeoutBlockHeight
+        }
+        console.log('refundObj', refundObject);
+        setTxHistory(swapResponse.id, refundObject);
+      }
       break;
 
     case SwapUpdateEvent.TransactionConfirmed:

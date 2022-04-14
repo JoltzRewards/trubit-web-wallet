@@ -10,7 +10,7 @@ import { ContractPreview } from "@app/pages/sign-transaction/components/contract
 import { Row } from "@app/pages/sign-transaction/components/row";
 import { useCurrentAccount } from "@app/store/accounts/account.hooks";
 import { deserializeCV, getCVTypeString, UnsignedContractCallOptions } from "@stacks/transactions";
-import { Button, color, Flex, Stack } from "@stacks/ui";
+import { Button, color, Flex, Stack, Text } from "@stacks/ui";
 import { microStxToStx, truncateMiddle } from "@stacks/ui-utils";
 import { Suspense } from "react";
 import { useSendSwapResponseState } from "../hooks/swap-btc.hooks";
@@ -67,10 +67,11 @@ export const CallContractConfirmDrawer = (props: CallContractConfirmDrawerProps)
           borderRadius="12px"
           py="extra-loose"
           px="base-loose"
+          textAlign={'left'}
         >
-          <Title as='h2' fontWeight='500'>
+          <Text as='h2' fontWeight='500' textAlign={'left'}>
             Functions and arguments
-          </Title>
+          </Text>
           <ContractPreview
             onClick={() => handleOpenTxLink(formatContractId(contractAddress, contractName))}
             contractAddress={contractAddress}

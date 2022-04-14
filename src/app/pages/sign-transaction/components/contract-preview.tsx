@@ -1,4 +1,4 @@
-import { color, DynamicColorCircle, Stack, StackProps } from '@stacks/ui';
+import { color, DynamicColorCircle, Stack, StackProps, Text } from '@stacks/ui';
 import { truncateMiddle } from '@stacks/ui-utils';
 
 import { Caption, Title } from '@app/components/typography';
@@ -40,9 +40,9 @@ export function ContractPreview(props: ContractPreviewProps): JSX.Element {
         backgroundSize="100%"
       />
       <Stack spacing="base-tight">
-        <Title as="h3" fontWeight="500">
+        <Text as="h3" fontWeight="500">
           {functionName || contractName}
-        </Title>
+        </Text>
         <Caption>
           {truncateMiddle(contractAddress, functionName ? 4 : 6)}
           {functionName ? `.${contractName}` : ''}

@@ -15,7 +15,7 @@ import { memo, Suspense, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { AccountInfoFetcher, BalanceFetcher } from "../home/components/fetchers";
 import { FiCopy } from 'react-icons/fi';
-import { truncateMiddle } from '@stacks/ui-utils';
+import { microStxToStx, truncateMiddle } from '@stacks/ui-utils';
 import { getBitcoinAddress } from "@app/store/assets/utils";
 import { BitcoinAccountActions } from "./components/btc-account-actions";
 import { DataList } from "@app/features/data-list/data-list";
@@ -23,12 +23,15 @@ import { BitcoinAssets } from "@app/features/balances-list/components/bitcoin-as
 import { useStxTokenState } from "@app/store/assets/asset.hooks";
 import { AssetRow } from "@app/components/asset-row";
 import { BtcAccountTabs } from "./components/btc-account-tabs";
-import { BtcActivityList } from "../btc-activity/btc-activity-list";
+import { BtcActivityList, RefundInfoDrawer } from "../btc-activity/btc-activity-list";
 import { BaseDrawer } from "@app/components/drawer";
 import { PrimaryButton } from "@app/components/primary-button";
 import { Switch } from "@app/components/switch";
 import { BitcoinRewardsNotice } from "../btc-rewards/components/BitcoinRewardsNotice";
 import { useBitcoinRewardsNoticeVisibilityState } from "../btc-rewards/hooks/btc-rewards.hooks";
+import { CallContractConfirmDrawer } from "../buy-btc/components/call-contract-confirm-drawer";
+import { broadcastRefundStx, usePreviewRefundStxVisibilityState, useRefundStxTxSubmittedState, useRefundTxOptionState, useSelectedRefundInfoState } from "../btc-activity/hooks/btc-activity.hooks";
+import { useAtom } from "jotai";
 
 export const AccountAddress = memo((props: StackProps) => {
   const currentAccount = useCurrentAccount();
@@ -63,12 +66,18 @@ export const BitcoinAccount = () => {
   const account = useCurrentAccount();
   const stxToken = useStxTokenState(account ? account.address : "");
   const [, setBitcoinRewardsNoticeVisibility] = useBitcoinRewardsNoticeVisibilityState();
+  const [selectedRefundInfo, ] = useSelectedRefundInfoState(); 
+  const [, _broadcastRefundStx] = useAtom(broadcastRefundStx);
+  const [refundStxOptions, ] = useRefundTxOptionState();
+  const [refundStxTxSubmitted, ] = useRefundStxTxSubmittedState();
+  const [previewRefundStxVisibility, ] = usePreviewRefundStxVisibilityState();
+  const [, setPreviewRefundStxVisibility] = usePreviewRefundStxVisibilityState();
   
   useRouteHeader(<Header title="Bitcoin" onClose={() => navigate(RouteUrls.Home)} />);
 
   useEffect(() => {
     // setBitcoinRewardsNoticeVisibility(true);
-  }, [])
+  }, []);
 
   return (
     <>
@@ -103,6 +112,16 @@ export const BitcoinAccount = () => {
         />
       </Stack>
       <BitcoinRewardsNotice />
+      <RefundInfoDrawer />
+      <CallContractConfirmDrawer
+        amount={microStxToStx(selectedRefundInfo ? selectedRefundInfo.amount : 0)}
+        onBroadcastTx={_broadcastRefundStx}
+        txOptions={refundStxOptions}
+        title={'Refund STX'}
+        disabled={refundStxTxSubmitted}
+        isShowing={previewRefundStxVisibility}
+        onClose={() => setPreviewRefundStxVisibility(false)}
+      />
     </>
   )
 }
