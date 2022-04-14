@@ -69,7 +69,9 @@ export const selectedRefundSwapStatus = atom({
   pending: false,
   message: '',
   loading: false,
-  canRefund: false
+  canRefund: false,
+  canClaimStx: false,
+  canClaimBtc: false
 })
 
 // refund stx info

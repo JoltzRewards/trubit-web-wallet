@@ -59,6 +59,10 @@ export const RefundInfoDrawer = () => {
 
   }
 
+  const handlePreviewClaimStx = () => {
+
+  }
+
   const getSwapStatusMessage = () => {
     if (selectedRefundSwapStatus.loading) {
       return (
@@ -100,13 +104,25 @@ export const RefundInfoDrawer = () => {
             Lightning transaction should be refunded automatically.
           </Text>
         }
-        <PrimaryButton
-          width='100%'
-          onClick={handlePreviewRefundStx}
-          isDisabled={selectedRefundSwapStatus.loading || !selectedRefundSwapStatus.canRefund}
-        >
-          Refund
-        </PrimaryButton>
+        {
+          selectedRefundSwapStatus.canClaimStx &&
+          <PrimaryButton
+            width='100%'
+            onClick={handlePreviewClaimStx}
+          >
+            Claim STX
+          </PrimaryButton>
+        }
+        {
+          selectedRefundSwapStatus.canRefund &&
+          <PrimaryButton
+            width='100%'
+            onClick={handlePreviewRefundStx}
+            isDisabled={selectedRefundSwapStatus.loading || !selectedRefundSwapStatus.canRefund}
+          >
+            Refund
+          </PrimaryButton>
+        }
       </Stack>
     </BaseDrawer>
   )

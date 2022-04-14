@@ -56,7 +56,9 @@ export const getRefundSwapStatus = atom(
       pending: false,
       message: '',
       loading: true,
-      canRefund: false
+      canRefund: false,
+      canClaimBtc: false,
+      canClaimStx: false
     });
 
     postData(url, {
@@ -70,7 +72,9 @@ export const getRefundSwapStatus = atom(
         pending: false,
         message: '',
         loading: false,
-        canRefund: true
+        canRefund: false,
+        canClaimBtc: false,
+        canClaimStx: false
       }
 
       if (_selectedRefundInfo?.swapInfo.base === 'BTC ⚡') {
@@ -137,6 +141,7 @@ export const getRefundSwapStatus = atom(
         case SwapUpdateEvent.ASTransactionConfirmed:
           _selectedRefundSwapStatus.pending = true;
           _selectedRefundSwapStatus.message = 'Atomic swap transaction is confirmed.';
+          _selectedRefundSwapStatus.canClaimStx = true;
           break;
         case SwapUpdateEvent.SwapExpired:
           _selectedRefundSwapStatus.error = true;
