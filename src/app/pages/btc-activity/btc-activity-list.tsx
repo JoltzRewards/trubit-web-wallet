@@ -1,7 +1,7 @@
 import { BtcIcon } from "@app/components/icons/btc-icon";
 import { NoAccountActivity } from "@app/features/activity-list/components/no-account-activity";
 import { Stack, Text, Circle, color } from "@stacks/ui";
-import { getCurrentAccountSubmittedBtcTxsState, getRefundSwapStatus, refundSwap, setRefundStxInfo, useActivityListDrawerVisibility, usePreviewRefundStxVisibilityState, useSelectedRefundInfoState, useSelectedRefundSwapStatus } from "./hooks/btc-activity.hooks";
+import { broadcastClaimStx, claimBtc, getCurrentAccountSubmittedBtcTxsState, getRefundSwapStatus, refundSwap, setClaimStxInfo, setRefundStxInfo, useActivityListDrawerVisibility, useClaimStxTxSubmittedState, useClaimTxOptionState, usePreviewClaimStxVisibilityState, usePreviewRefundStxVisibilityState, useSelectedRefundInfoState, useSelectedRefundSwapStatus } from "./hooks/btc-activity.hooks";
 import { RefundInfo } from "./store/btc-activity.store";
 import { AiOutlineArrowRight } from 'react-icons/ai';
 import { Caption } from "@app/components/typography";
@@ -12,6 +12,7 @@ import { BaseDrawer } from "@app/components/drawer";
 import { PrimaryButton } from "@app/components/primary-button";
 import { useAtom } from "jotai";
 import { useEffect } from "react";
+import { CallContractConfirmDrawer } from "../buy-btc/components/call-contract-confirm-drawer";
 
 export const BtcActivityList = () => {
   const transactions = getCurrentAccountSubmittedBtcTxsState();
@@ -41,6 +42,16 @@ export const RefundInfoDrawer = () => {
   const [selectedRefundSwapStatus, ] = useSelectedRefundSwapStatus();
   const [, _setRefundStxInfo] = useAtom(setRefundStxInfo);
   const [, setPreviewRefundStxVisibility] = usePreviewRefundStxVisibilityState();
+  
+  // claim stx
+  const [claimTxOptions, ] = useClaimTxOptionState();
+  const [, _setClaimStxInfo] = useAtom(setClaimStxInfo);
+  const [previewClaimStxVisibility, setPreviewClaimStxVisibility] = usePreviewClaimStxVisibilityState();
+  const [, _broadcastClaimStx] = useAtom(broadcastClaimStx);
+  const [claimStxTxSubmitted, ] = useClaimStxTxSubmittedState();
+
+  // claim btc
+  const [, _claimBtc] = useAtom(claimBtc);
 
   const handlePreviewRefund = () => {
     if (selectedRefundInfo?.swapInfo.base === 'STX') {
@@ -60,7 +71,8 @@ export const RefundInfoDrawer = () => {
   }
 
   const handlePreviewClaimStx = () => {
-
+    setPreviewClaimStxVisibility(true);
+    _setClaimStxInfo();
   }
 
   const getSwapStatusMessage = () => {
@@ -114,6 +126,15 @@ export const RefundInfoDrawer = () => {
           </PrimaryButton>
         }
         {
+          selectedRefundSwapStatus.canClaimBtc &&
+          <PrimaryButton
+            width={'100%'}
+            onClick={_claimBtc}
+          >
+            Claim BTC
+          </PrimaryButton>
+        }
+        {
           selectedRefundSwapStatus.canRefund &&
           <PrimaryButton
             width='100%'
@@ -123,6 +144,15 @@ export const RefundInfoDrawer = () => {
             Refund
           </PrimaryButton>
         }
+        <CallContractConfirmDrawer
+          amount={selectedRefundInfo?.swapResponse.quoteAmount}
+          onBroadcastTx={_broadcastClaimStx}
+          txOptions={claimTxOptions}
+          title={'Claim STX'}
+          disabled={claimStxTxSubmitted}
+          isShowing={previewClaimStxVisibility}
+          onClose={() => setPreviewClaimStxVisibility(false)}
+        />
       </Stack>
     </BaseDrawer>
   )

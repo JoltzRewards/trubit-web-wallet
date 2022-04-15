@@ -601,7 +601,7 @@ export const claimBtc = atom(
         _swapInfo.quote,
         claimTransaction.toHex(),
         () => {
-          console.log('broadcast claim BTC ', swapResponse);
+          console.log('broadcast claim BTC ', _swapResponse);
         }
       )
     })

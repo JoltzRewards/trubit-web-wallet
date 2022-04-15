@@ -71,8 +71,18 @@ export const selectedRefundSwapStatus = atom({
   loading: false,
   canRefund: false,
   canClaimStx: false,
-  canClaimBtc: false
+  canClaimBtc: false,
+  transaction: null
 })
+
+// claim stx info
+export const claimStxTxId = atom('');
+export const claimStxTxSubmitted = atom(false);
+export const previewClaimStxVisibility = atom(false);
+export const claimTxOptions = atom<UnsignedContractCallOptions | undefined>(undefined);
+export const unsignedClaimTx = atom<StacksTransaction | undefined>(undefined);
+export const serializedClaimTxPayload = atom<string>('');
+export const estimatedClaimTxByteLength = atom<number>(0);
 
 // refund stx info
 export const refundStxTxId = atom('');

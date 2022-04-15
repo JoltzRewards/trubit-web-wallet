@@ -1,12 +1,17 @@
-import { lnSwapApi, postData, SwapUpdateEvent } from "@app/pages/buy-btc/constants/networks";
+import { bitcoinMainnet, getData, lnSwapApi, postData, SwapUpdateEvent } from "@app/pages/buy-btc/constants/networks";
+import { getContractAddress } from "@app/pages/buy-btc/utils/utils";
 import { currentAccountState } from "@app/store/accounts";
 import { currentStacksNetworkState } from "@app/store/network/networks";
-import { AnchorMode, broadcastTransaction, bufferCV, createStacksPrivateKey, FungibleConditionCode, makeContractSTXPostCondition, makeUnsignedContractCall, PostConditionMode, pubKeyfromPrivKey, publicKeyToString, TransactionSigner, UnsignedContractCallOptions } from "@stacks/transactions";
+import { AnchorMode, broadcastTransaction, bufferCV, createStacksPrivateKey, FungibleConditionCode, makeContractSTXPostCondition, makeUnsignedContractCall, PostConditionMode, pubKeyfromPrivKey, publicKeyToString, TransactionSigner, uintCV, UnsignedContractCallOptions } from "@stacks/transactions";
 import { serializePayload } from "@stacks/transactions/dist/payload";
+import { getContractName } from "@stacks/ui-utils";
+import { address, ECPair, Transaction } from "bitcoinjs-lib";
 import BN from "bn.js";
 import { atom, useAtom } from "jotai"
 import { useAtomValue } from "jotai/utils";
-import { activityListDrawerVisibility, currentAccountSubmittedBtcTxsState, estimatedRefundTxByteLength, previewRefundStxVisibility, refundStxTxId, refundStxTxSubmitted, refundTxOptions, selectedRefundInfo, selectedRefundSwapStatus, serializedRefundTxPayload, unsignedRefundTx } from "../store/btc-activity.store"
+import { activityListDrawerVisibility, claimStxTxId, claimStxTxSubmitted, claimTxOptions, currentAccountSubmittedBtcTxsState, estimatedClaimTxByteLength, estimatedRefundTxByteLength, previewClaimStxVisibility, previewRefundStxVisibility, refundStxTxId, refundStxTxSubmitted, refundTxOptions, selectedRefundInfo, selectedRefundSwapStatus, serializedClaimTxPayload, serializedRefundTxPayload, unsignedClaimTx, unsignedRefundTx } from "../store/btc-activity.store"
+import { detectSwap, constructClaimTransaction } from 'boltz-core';
+import { sendSwapStatus } from "@app/pages/buy-btc/store/swap-btc.store";
 
 export const getCurrentAccountSubmittedBtcTxsState = () => {
   return useAtomValue(currentAccountSubmittedBtcTxsState);
@@ -58,7 +63,8 @@ export const getRefundSwapStatus = atom(
       loading: true,
       canRefund: false,
       canClaimBtc: false,
-      canClaimStx: false
+      canClaimStx: false,
+      transaction: null
     });
 
     postData(url, {
@@ -74,7 +80,8 @@ export const getRefundSwapStatus = atom(
         loading: false,
         canRefund: false,
         canClaimBtc: false,
-        canClaimStx: false
+        canClaimStx: false,
+        transaction: null
       }
 
       if (_selectedRefundInfo?.swapInfo.base === 'BTC ⚡') {
@@ -141,7 +148,8 @@ export const getRefundSwapStatus = atom(
         case SwapUpdateEvent.ASTransactionConfirmed:
           _selectedRefundSwapStatus.pending = true;
           _selectedRefundSwapStatus.message = 'Atomic swap transaction is confirmed.';
-          _selectedRefundSwapStatus.canClaimStx = true;
+          _selectedRefundSwapStatus.canClaimBtc = true;
+          _selectedRefundSwapStatus.transaction = data.transaction;
           break;
         case SwapUpdateEvent.SwapExpired:
           _selectedRefundSwapStatus.error = true;
@@ -275,3 +283,258 @@ export const broadcastRefundStx = atom(
     }
   }
 )
+
+// claim stx
+export const useClaimStxTxIdState = () => {
+  return useAtom(claimStxTxId);
+}
+
+export const useClaimStxTxSubmittedState = () => {
+  return useAtom(claimStxTxSubmitted);
+}
+
+export const usePreviewClaimStxVisibilityState = () => {
+  return useAtom(previewClaimStxVisibility);
+}
+
+export const useClaimTxOptionState = () => {
+  return useAtom(claimTxOptions);
+}
+
+export const setClaimStxInfo = atom(
+  null,
+  async (get, set) => {
+    let refundInfo = get(selectedRefundInfo);
+    
+    if (refundInfo) {
+      let swapResponse = refundInfo.swapResponse;
+      let swapInfo = refundInfo.swapInfo;
+      console.log('claim stx: ', swapInfo, swapResponse);
+  
+      const contract = swapResponse.address;
+      console.log('contract: ', contract)
+      const contractAddress = getContractAddress(contract).toUpperCase();
+      const contractName = getContractName(contract);
+      const preimage = swapInfo?.preimage;
+      let amount = Math.floor(parseFloat(swapInfo.quoteAmount) * 1000000);
+      let timelock = swapResponse.asTimeoutBlockHeight;
+
+      console.log(
+        `Claiming ${amount} Stx with preimage ${preimage} and timelock ${timelock}`
+      );
+      console.log('amount: ', amount);
+
+      let swapamount = amount.toString(16).split('.')[0] + '';
+      let postConditionAmount = new BN(amount);
+      console.log('postConditionAmount: ', postConditionAmount);
+
+      const postConditionAddress = contractAddress;
+      const postConditionCode = FungibleConditionCode.LessEqual;
+      const postConditions = [
+        makeContractSTXPostCondition(
+          postConditionAddress,
+          contractName,
+          postConditionCode,
+          postConditionAmount
+        )
+      ];
+
+      console.log(
+        'postConditions: ' + contractAddress,
+        contractName,
+        postConditionCode,
+        postConditionAmount
+      );
+
+      const functionArgs = [
+        bufferCV(Buffer.from(preimage, 'hex')),
+        uintCV(amount)
+      ];
+
+      const account = get(currentAccountState);
+      const network = get(currentStacksNetworkState)
+      let _txOptions: UnsignedContractCallOptions = {
+        contractAddress: contractAddress,
+        contractName: contractName,
+        functionName: 'claimStx',
+        functionArgs: functionArgs,
+        publicKey: publicKeyToString(pubKeyfromPrivKey(account ? account.stxPrivateKey : '')),
+        network,
+        postConditionMode: PostConditionMode.Deny,
+        postConditions,
+        anchorMode: AnchorMode.Any,
+      };
+      console.log('txOptions: ', _txOptions);
+      const transaction = await makeUnsignedContractCall(_txOptions);
+      const _serializedTxPayload = serializePayload(transaction.payload).toString('hex');
+      const _estimatedTxByteLength = transaction.serialize().byteLength;
+      set(serializedClaimTxPayload, _serializedTxPayload);
+      set(estimatedClaimTxByteLength, _estimatedTxByteLength);
+      set(claimTxOptions, _txOptions);
+      set(unsignedClaimTx, transaction);
+    }
+  }
+)
+
+export const broadcastClaimStx = atom(
+  null,
+  async (get, set) => {
+    let _transaction = get(unsignedClaimTx);
+
+    if (_transaction === undefined) {
+      return;
+    }
+
+    console.log('found tx');
+    const network = get(currentStacksNetworkState);
+    const account = get(currentAccountState);
+    const signer = new TransactionSigner(_transaction);
+    signer.signOrigin(createStacksPrivateKey(account ? account.stxPrivateKey : ''));
+    
+    if (_transaction) {
+      set(claimStxTxSubmitted, true);
+      const broadcastResponse = await broadcastTransaction(_transaction, network);
+      console.log('broadcastResponse: ', broadcastResponse)
+      const txId = broadcastResponse.txid;
+      set(claimStxTxId, txId);
+      set(claimStxTxSubmitted, false);
+      set(previewClaimStxVisibility, false);
+    }
+  }
+)
+
+// claim btc
+export const claimBtc = atom(
+  null,
+  async (get, set) => {
+    getFeeEstimation((feeEstimation: any) => {
+      const refundInfo = get(selectedRefundInfo);
+
+      if (refundInfo) {
+        const _swapInfo = refundInfo.swapInfo;
+        const _swapResponse = refundInfo.swapResponse;
+        const _swapStatus = get(selectedRefundSwapStatus);
+        console.log('claimswap swapinfo ', _swapInfo);
+        console.log('claimswap swapResponse ', _swapResponse);
+        console.log('claimswap feeEstimation ', feeEstimation);
+        // console.log('claimswap swapStatus ', swapStatus);
+  
+        const claimTransaction = getClaimTransaction(
+          _swapInfo,
+          _swapResponse,
+          feeEstimation,
+          _swapStatus
+        );
+  
+        console.log('swapactions.124 claimtx: ', claimTransaction);
+        console.log('swapactions.124 claimtx getId: ', claimTransaction.getId());
+        console.log(
+          'swapactions.124 claimtx getHash: ',
+          claimTransaction.getHash()
+        );
+  
+        broadcastClaimBtc(
+          _swapInfo.quote,
+          claimTransaction.toHex(),
+          () => {
+            console.log('broadcast claim BTC ', _swapResponse);
+            set(activityListDrawerVisibility, false);
+          }
+        )
+      }
+    })
+  }
+)
+
+const getFeeEstimation = (callback: any) => {
+  const url = `${lnSwapApi}/getfeeestimation`;
+  console.log('get fee estimation...');
+
+  getData(url)
+  .then(response => {
+    console.log(response);
+    callback(response)
+  }).catch(err => {
+    console.log('err', err)
+    console.log('some issue with fee estimation...');
+    callback({ BTC: 2, RBTC: 2, ETH: 0, STX: 0 })
+  })
+}
+
+const getClaimTransaction = (
+  swapInfo: any,
+  swapResponse: any,
+  feeEstimation: any,
+  swapStatus: any
+) => {
+  // redeemScript
+  console.log('swapResponse.redeemScript ', swapResponse.redeemScript);
+  const redeemScript = Buffer.from(swapResponse.redeemScript, 'hex');
+
+  // response.transactionHex
+  console.log('swapStatus.transaction.hex ', swapStatus.transaction.hex);
+  const lockupTransaction = Transaction.fromHex(swapStatus.transaction.hex);
+  console.log('lockupTransaction ', lockupTransaction);
+
+  // find the script and value
+  let myoutput; 
+  console.log('swapResponse.quoteAmount', swapResponse.quoteAmount)
+  for (let i = 0; i < lockupTransaction.outs.length; i++) {
+    const item = lockupTransaction.outs[i];
+    if (item.value === swapResponse.quoteAmount * 100000000) {
+      myoutput = item;
+      myoutput.vout = i;
+    }
+  }
+  console.log('found myoutput ', myoutput);
+  console.log(
+    'swapInfo.preimage',
+    swapInfo.preimage,
+    swapInfo.keys.privateKey,
+    swapResponse.timeoutBlockHeight,
+    feeEstimation[swapInfo.quote],
+    lockupTransaction.getHash(),
+    lockupTransaction,
+    bitcoinMainnet
+  )
+
+  console.log(
+    'constructClaimTransaction inputs',
+    lockupTransaction,
+    detectSwap(redeemScript, lockupTransaction),
+    redeemScript,
+    swapInfo.invoice,
+    swapInfo.quote,
+    bitcoinMainnet
+  )
+
+  // TODO: ADD TESTNET
+  let destinationScript = address.toOutputScript(swapInfo.invoice, bitcoinMainnet);
+  console.log(destinationScript);
+  return constructClaimTransaction(
+    [
+      {
+        ...detectSwap(redeemScript, lockupTransaction),
+        redeemScript,
+        txHash: lockupTransaction.getHash(),
+        preimage: Buffer.from(swapInfo.preimage, 'hex'),
+        keys: ECPair.fromPrivateKey(Buffer.from(swapInfo.keys.privateKey, 'hex'))
+      },
+    ],
+    destinationScript,
+    feeEstimation[swapInfo.quote]
+  )
+}
+
+const broadcastClaimBtc = (currency: any, claimTransaction: any, cb: any) => {
+  const url = `${lnSwapApi}/broadcasttransaction`;
+  postData(url, {
+    currency,
+    transactionHex: claimTransaction
+  })
+  .then(() => cb())
+  .catch(err => {
+    const message = err.response.data.error;
+    window.alert(`Failed to broadcast claim transaction: ${message}`)
+  })
+}
