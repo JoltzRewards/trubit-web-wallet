@@ -860,7 +860,7 @@ export const handleSwapStatus = (
       setSwapStatus(swapStatusObj);
 
       // if BTC payment is in mempool, then add to tx history
-      if (swapInfo.quote === 'BTC' && !swapInfo.invoice?.toLowerCase().startsWith('lnbc')) {
+      if (swapInfo.base === 'BTC' && !swapInfo.invoice?.toLowerCase().startsWith('lnbc')) {
         let refundObject: RefundInfo = {
           amount: parseInt((parseFloat(swapResponse.expectedAmount) / 100).toString()),
           contract: swapResponse.address,
@@ -1075,7 +1075,7 @@ export const setLockStxInfo = atom(
       network: network,
       postConditions: postConditions,
       anchorMode: AnchorMode.Any,
-      nonce: new BN(_nonce, 10)
+      nonce: new BN(_nonce + 1, 10)
     }
     console.log('txOptions: ', txOptions);
     const transaction = await makeUnsignedContractCall(_txOptions);

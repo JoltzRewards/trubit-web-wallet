@@ -70,7 +70,7 @@ export const initLnSwap = atom(
 
     base = base.split(" ")[0]
     let baseAmount = new BigNumber(get(sendValue));
-    quote = base.split(" ")[0]
+    quote = quote.split(" ")[0]
     let quoteAmount = new BigNumber(get(receiveValue));
 
     // Error checking: check if sendValue < min. value or > max. value
@@ -338,35 +338,38 @@ const handleReverseSwapStatus = (
       })
       navigateReceiveSwapToken();
 
+      console.log(swapInfo);
       // if LN payment is in mempool, then add to tx history
-      if (swapInfo.invoice?.toLowerCase().startsWith('lnbc')) {
+      if (swapResponse.invoice?.toLowerCase().startsWith('lnbc')) {
         let refundObject: RefundInfo = {
-          amount: parseInt((parseFloat(swapResponse.expectedAmount) / 100).toString()),
+          amount: parseInt((parseFloat(swapResponse.onchainAmount) / 100).toString()),
           contract: swapResponse.address,
           currency: swapInfo.base,
           privateKey: swapInfo.keys.privateKey,
           preimageHash: swapInfo.preimageHash,
           redeemScript: swapResponse.redeemScript,
-          swapInfo: {
-            base: swapInfo.base,
-            baseAmount: swapInfo.baseAmount,
-            invoice: swapInfo.invoice,
-            keys: swapInfo.keys,
-            pair: swapInfo.pair,
-            preimage: swapInfo.preimage,
-            preimageHash: swapInfo.preimageHash,
-            quote: swapInfo.quote,
-            quoteAmount: swapInfo.quoteAmount
-          },
-          swapResponse: {
-            acceptZeroConf: false,
-            address: swapResponse.address,
-            claimAddress: swapResponse.claimAddress,
-            expectedAmount: swapResponse.expectedAmount,
-            id: swapResponse.id,
-            redeemScript: '',
-            timeoutBlockHeight: swapResponse.timeoutBlockHeight
-          },
+          swapInfo: swapInfo,
+          swapResponse: swapResponse,
+          // swapInfo: {
+          //   base: swapInfo.base,
+          //   baseAmount: swapInfo.baseAmount,
+          //   invoice: swapInfo.invoice,
+          //   keys: swapInfo.keys,
+          //   pair: swapInfo.pair,
+          //   preimage: swapInfo.preimage,
+          //   preimageHash: swapInfo.preimageHash,
+          //   quote: swapInfo.quote,
+          //   quoteAmount: swapInfo.quoteAmount
+          // },
+          // swapResponse: {
+          //   acceptZeroConf: false,
+          //   address: swapResponse.address,
+          //   claimAddress: swapResponse.claimAddress,
+          //   expectedAmount: swapResponse.expectedAmount,
+          //   id: swapResponse.id,
+          //   redeemScript: '',
+          //   timeoutBlockHeight: swapResponse.timeoutBlockHeight
+          // },
           timeoutBlockHeight: swapResponse.timeoutBlockHeight
         }
         console.log('refundObj', refundObject);

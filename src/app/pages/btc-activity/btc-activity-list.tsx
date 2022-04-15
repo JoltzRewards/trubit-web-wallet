@@ -1,8 +1,8 @@
 import { BtcIcon } from "@app/components/icons/btc-icon";
 import { NoAccountActivity } from "@app/features/activity-list/components/no-account-activity";
 import { Stack, Text, Circle, color } from "@stacks/ui";
-import { broadcastClaimStx, claimBtc, getCurrentAccountSubmittedBtcTxsState, getRefundSwapStatus, refundSwap, setClaimStxInfo, setRefundStxInfo, useActivityListDrawerVisibility, useClaimStxTxSubmittedState, useClaimTxOptionState, usePreviewClaimStxVisibilityState, usePreviewRefundStxVisibilityState, useSelectedRefundInfoState, useSelectedRefundSwapStatus } from "./hooks/btc-activity.hooks";
-import { RefundInfo } from "./store/btc-activity.store";
+import { broadcastClaimStx, broadcastRefundStx, claimBtc, getBlockHeight, getCurrentAccountSubmittedBtcTxsState, getRefundSwapStatus, setClaimStxInfo, setRefundStxInfo, useActivityListDrawerVisibility, useBitcoinBlockHeightState, useClaimStxTxSubmittedState, useClaimTxOptionState, usePreviewClaimStxVisibilityState, usePreviewRefundBtcVisibilityState, usePreviewRefundStxVisibilityState, useRefundBtcTxIdState, useRefundBtcTxSubmittedState, useRefundStxTxSubmittedState, useRefundTxOptionState, useSelectedRefundInfoState, useSelectedRefundSwapStatus, useStacksBlockHeightState } from "./hooks/btc-activity.hooks";
+import { RefundInfo, setTxHistory } from "./store/btc-activity.store";
 import { AiOutlineArrowRight } from 'react-icons/ai';
 import { Caption } from "@app/components/typography";
 import { StxIcon } from "@app/components/icons/stx-icon";
@@ -13,11 +13,24 @@ import { PrimaryButton } from "@app/components/primary-button";
 import { useAtom } from "jotai";
 import { useEffect } from "react";
 import { CallContractConfirmDrawer } from "../buy-btc/components/call-contract-confirm-drawer";
+import { microStxToStx } from "@stacks/ui-utils";
 
 export const BtcActivityList = () => {
   const transactions = getCurrentAccountSubmittedBtcTxsState();
   console.log('txs: ', transactions);
   const hasTxs = Object.keys(transactions).length > 0;
+
+  // get block height
+  const [, _getBlockHeight] = useAtom(getBlockHeight);
+
+  useEffect(() => {
+    _getBlockHeight();
+  }, [])
+
+  // const [, _setTxHistory] = useAtom(setTxHistory);
+  // useEffect(() => {
+  //   _setTxHistory();
+  // }, [])
   const [activityListDrawerVisibility, setActivityListDrawerVisibility] = useActivityListDrawerVisibility();
 
   if (!hasTxs) return <NoAccountActivity />
@@ -40,8 +53,18 @@ export const RefundInfoDrawer = () => {
   const [activityListDrawerVisibility, setActivityListDrawerVisibility] = useActivityListDrawerVisibility();
   const [selectedRefundInfo, ] = useSelectedRefundInfoState();
   const [selectedRefundSwapStatus, ] = useSelectedRefundSwapStatus();
+
+  // refund stx
   const [, _setRefundStxInfo] = useAtom(setRefundStxInfo);
-  const [, setPreviewRefundStxVisibility] = usePreviewRefundStxVisibilityState();
+  const [previewRefundStxVisibility, setPreviewRefundStxVisibility] = usePreviewRefundStxVisibilityState();
+  const [, _broadcastRefundStx] = useAtom(broadcastRefundStx);
+  const [refundTxOptions, ] = useRefundTxOptionState();
+  const [refundStxTxSubmitted, ] = useRefundStxTxSubmittedState();
+
+  // refund btc
+  const [previewRefundBtcVisibility, ] = usePreviewRefundBtcVisibilityState();
+  const [refundBtcTxSubmitted, ] = useRefundBtcTxSubmittedState();
+  const [refundBtcTxId, ] = useRefundBtcTxIdState();
   
   // claim stx
   const [claimTxOptions, ] = useClaimTxOptionState();
@@ -53,13 +76,10 @@ export const RefundInfoDrawer = () => {
   // claim btc
   const [, _claimBtc] = useAtom(claimBtc);
 
-  const handlePreviewRefund = () => {
-    if (selectedRefundInfo?.swapInfo.base === 'STX') {
-      handlePreviewRefundStx();
-    } else if (selectedRefundInfo?.swapInfo.base === 'BTC') {
-      handlePreviewRefundBtc();
-    }
-  }
+  // block height
+  const [stacksBlockHeight, ] = useStacksBlockHeightState();
+  const [bitcoinBlockHeight, ] = useBitcoinBlockHeightState();
+
   const handlePreviewRefundStx = () => {
     // console.log('refund tx')
     setPreviewRefundStxVisibility(true);
@@ -135,14 +155,48 @@ export const RefundInfoDrawer = () => {
           </PrimaryButton>
         }
         {
-          selectedRefundSwapStatus.canRefund &&
-          <PrimaryButton
-            width='100%'
-            onClick={handlePreviewRefundStx}
-            isDisabled={selectedRefundSwapStatus.loading || !selectedRefundSwapStatus.canRefund}
-          >
-            Refund
-          </PrimaryButton>
+          (selectedRefundSwapStatus.canRefund && selectedRefundInfo?.swapInfo.base === 'STX') &&
+          <>
+            <PrimaryButton
+              width='100%'
+              onClick={handlePreviewRefundStx}
+              isDisabled={
+                selectedRefundSwapStatus.loading || 
+                !selectedRefundSwapStatus.canRefund ||
+                (selectedRefundInfo.timeoutBlockHeight > stacksBlockHeight)
+              }
+            >
+              Refund
+            </PrimaryButton>
+            {
+              (selectedRefundInfo.timeoutBlockHeight > stacksBlockHeight) &&
+              <Text>
+                Refund blockheight not reached yet. Please try again in ~${((selectedRefundInfo ? selectedRefundInfo.timeoutBlockHeight : 0) - stacksBlockHeight) * 10} minutes.
+              </Text>
+            }
+          </>
+        }
+        {
+          (selectedRefundSwapStatus.canRefund && selectedRefundInfo?.swapInfo.base === 'BTC') &&
+          <>
+            <PrimaryButton
+              width='100%'
+              onClick={handlePreviewRefundBtc}
+              isDisabled={
+                selectedRefundSwapStatus.loading || 
+                !selectedRefundSwapStatus.canRefund ||
+                (selectedRefundInfo.timeoutBlockHeight > bitcoinBlockHeight)
+              }
+            >
+              Refund
+            </PrimaryButton>
+            {
+              (selectedRefundInfo.timeoutBlockHeight > bitcoinBlockHeight) &&
+              <Text>
+                Refund blockheight not reached yet. Please try again in ~${((selectedRefundInfo ? selectedRefundInfo.timeoutBlockHeight : 0) - stacksBlockHeight) * 10} minutes.
+              </Text>
+            }
+          </>
         }
         <CallContractConfirmDrawer
           amount={selectedRefundInfo?.swapResponse.quoteAmount}
@@ -152,6 +206,15 @@ export const RefundInfoDrawer = () => {
           disabled={claimStxTxSubmitted}
           isShowing={previewClaimStxVisibility}
           onClose={() => setPreviewClaimStxVisibility(false)}
+        />
+        <CallContractConfirmDrawer
+          amount={selectedRefundInfo?.swapResponse.baseAmount}
+          onBroadcastTx={_broadcastRefundStx}
+          txOptions={refundTxOptions}
+          title={'Refund STX'}
+          disabled={refundStxTxSubmitted}
+          isShowing={previewRefundStxVisibility}
+          onClose={() => setPreviewRefundStxVisibility(false)}
         />
       </Stack>
     </BaseDrawer>
@@ -172,7 +235,7 @@ const ActivityList = (props: ActivityListProps) => {
 
   const renderIcon = () => {
     if (refundInfo.swapInfo.quote === 'BTC') {
-      if (refundInfo.swapInfo.invoice.toLowerCase().startsWith('lnbc')) {
+      if (refundInfo.swapResponse.invoice?.toLowerCase().startsWith('lnbc')) {
         return (
           <LnBtcAvatar />
         )
@@ -214,7 +277,13 @@ const ActivityList = (props: ActivityListProps) => {
         <Stack>
           <Stack isInline alignItems={'center'}>
             <Text>
-              {refundInfo.swapInfo.base}
+              {
+                refundInfo.swapResponse.invoice?.toLowerCase().startsWith('lnbc')
+                ?
+                'BTC ⚡'
+                :
+                refundInfo.swapInfo.base
+              }
             </Text>
             <AiOutlineArrowRight 
               size={15}
@@ -229,7 +298,13 @@ const ActivityList = (props: ActivityListProps) => {
         </Stack>
         <Stack>
           <Text>
-            {refundInfo.swapInfo.quoteAmount}
+            {
+              refundInfo.swapResponse.invoice?.toLowerCase().startsWith('lnbc')
+              ?
+              microStxToStx(parseInt((refundInfo.amount / 100).toString()))
+              :
+              refundInfo.swapInfo.quoteAmount
+            }
           </Text>
         </Stack>
       </SpaceBetween>

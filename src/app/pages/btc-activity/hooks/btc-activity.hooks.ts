@@ -9,9 +9,10 @@ import { address, ECPair, Transaction } from "bitcoinjs-lib";
 import BN from "bn.js";
 import { atom, useAtom } from "jotai"
 import { useAtomValue } from "jotai/utils";
-import { activityListDrawerVisibility, claimStxTxId, claimStxTxSubmitted, claimTxOptions, currentAccountSubmittedBtcTxsState, estimatedClaimTxByteLength, estimatedRefundTxByteLength, previewClaimStxVisibility, previewRefundStxVisibility, refundStxTxId, refundStxTxSubmitted, refundTxOptions, selectedRefundInfo, selectedRefundSwapStatus, serializedClaimTxPayload, serializedRefundTxPayload, unsignedClaimTx, unsignedRefundTx } from "../store/btc-activity.store"
+import { activityListDrawerVisibility, bitcoinBlockHeight, claimStxTxId, claimStxTxSubmitted, claimTxOptions, currentAccountSubmittedBtcTxsState, estimatedClaimTxByteLength, estimatedRefundTxByteLength, previewClaimStxVisibility, previewRefundBtcVisibility, previewRefundStxVisibility, refundBtcTxId, refundBtcTxSubmitted, refundStxTxId, refundStxTxSubmitted, refundTxOptions, selectedRefundInfo, selectedRefundSwapStatus, serializedClaimTxPayload, serializedRefundTxPayload, stacksBlockHeight, unsignedClaimTx, unsignedRefundTx } from "../store/btc-activity.store"
 import { detectSwap, constructClaimTransaction } from 'boltz-core';
 import { sendSwapStatus } from "@app/pages/buy-btc/store/swap-btc.store";
+import { currentAccountNonceState } from "@app/store/accounts/nonce";
 
 export const getCurrentAccountSubmittedBtcTxsState = () => {
   return useAtomValue(currentAccountSubmittedBtcTxsState);
@@ -96,7 +97,6 @@ export const getRefundSwapStatus = atom(
           _selectedRefundSwapStatus.message = 'Invoice paid.';
           break;
         case SwapUpdateEvent.InvoiceSettled:
-          _selectedRefundSwapStatus.pending = true;
           _selectedRefundSwapStatus.message = 'Invoice settled.';
           break;
         case SwapUpdateEvent.InvoiceFailedToPay:
@@ -106,6 +106,7 @@ export const getRefundSwapStatus = atom(
         case SwapUpdateEvent.TransactionFailed:
           _selectedRefundSwapStatus.error = true;
           _selectedRefundSwapStatus.message = 'Transaction failed.';
+          _selectedRefundSwapStatus.canRefund = true;
           break;
         case SwapUpdateEvent.TransactionMempool:
           _selectedRefundSwapStatus.pending = true;
@@ -123,14 +124,18 @@ export const getRefundSwapStatus = atom(
         case SwapUpdateEvent.TransactionConfirmed:
           _selectedRefundSwapStatus.pending = true;
           _selectedRefundSwapStatus.message = 'Transaction is confirmed.';
+          _selectedRefundSwapStatus.canClaimStx = true;
+          _selectedRefundSwapStatus.transaction = data.transaction;
           break;
         case SwapUpdateEvent.TransactionLockupFailed:
           _selectedRefundSwapStatus.error = true;
           _selectedRefundSwapStatus.message = 'Failed to lockup transaction.';
+          _selectedRefundSwapStatus.canRefund = true;
           break;
         case SwapUpdateEvent.ASTransactionFailed:
           _selectedRefundSwapStatus.error = true;
           _selectedRefundSwapStatus.message = 'Atomic swap transaction failed.';
+          _selectedRefundSwapStatus.canRefund = true;
           break;
         case SwapUpdateEvent.ASTransactionMempool:
           _selectedRefundSwapStatus.pending = true;
@@ -154,8 +159,11 @@ export const getRefundSwapStatus = atom(
         case SwapUpdateEvent.SwapExpired:
           _selectedRefundSwapStatus.error = true;
           _selectedRefundSwapStatus.message = `Swap expired. ${failureReason}.`;
+          _selectedRefundSwapStatus.canRefund = true;
           break;
         default:
+          _selectedRefundSwapStatus.error = true;
+          _selectedRefundSwapStatus.message = 'Unknown error';
           break;
       }
 
@@ -166,15 +174,7 @@ export const getRefundSwapStatus = atom(
   }
 )
 
-export const refundSwap = atom(
-  null,
-  async (get, set) => {
-    console.log('refund swap...');
-
-
-  }
-)
-
+// refund stx
 export const setRefundStxInfo = atom(
   null,
   async (get, set) => {
@@ -284,6 +284,38 @@ export const broadcastRefundStx = atom(
   }
 )
 
+// refund btc
+export const useRefundBtcTxSubmittedState = () => {
+  return useAtom(refundBtcTxSubmitted)
+}
+
+export const useRefundBtcTxIdState = () => {
+  return useAtom(refundBtcTxId);
+}
+
+export const usePreviewRefundBtcVisibilityState = () => {
+  return useAtom(previewRefundBtcVisibility);
+}
+
+export const broadcastRefundBtc = atom(
+  null,
+  async (get, set) => {
+    let refundInfo = get(selectedRefundInfo);
+
+    if (refundInfo) {
+      const url = `${lnSwapApi}/gettransaction`;
+      const currency = refundInfo.currency;
+
+      // postData(url, {
+      //   currency,
+      //   transactionId: 
+      // })
+      // let redeemScript = Buffer.from(refundInfo.redeemScript, 'hex');
+      // const lockupTransaction = Transaction.fromHex()
+    }
+  }
+)
+
 // claim stx
 export const useClaimStxTxIdState = () => {
   return useAtom(claimStxTxId);
@@ -307,16 +339,18 @@ export const setClaimStxInfo = atom(
     let refundInfo = get(selectedRefundInfo);
     
     if (refundInfo) {
+      let isReverseSwap = refundInfo.swapResponse.invoice?.toLowerCase().startsWith('lnbc');
+
       let swapResponse = refundInfo.swapResponse;
       let swapInfo = refundInfo.swapInfo;
       console.log('claim stx: ', swapInfo, swapResponse);
   
-      const contract = swapResponse.address;
+      const contract = isReverseSwap ? swapResponse.lockupAddress : swapResponse.address;
       console.log('contract: ', contract)
       const contractAddress = getContractAddress(contract).toUpperCase();
       const contractName = getContractName(contract);
       const preimage = swapInfo?.preimage;
-      let amount = Math.floor(parseFloat(swapInfo.quoteAmount) * 1000000);
+      let amount = isReverseSwap ? parseInt((refundInfo.swapResponse.onchainAmount / 100).toString()) : Math.floor(parseFloat(swapInfo.quoteAmount) * 1000000);
       let timelock = swapResponse.asTimeoutBlockHeight;
 
       console.log(
@@ -352,7 +386,9 @@ export const setClaimStxInfo = atom(
       ];
 
       const account = get(currentAccountState);
-      const network = get(currentStacksNetworkState)
+      const network = get(currentStacksNetworkState);
+      const _nonce = get(currentAccountNonceState);
+      // console.log('nonce', _nonce, new BN(_nonce, 10));
       let _txOptions: UnsignedContractCallOptions = {
         contractAddress: contractAddress,
         contractName: contractName,
@@ -363,6 +399,7 @@ export const setClaimStxInfo = atom(
         postConditionMode: PostConditionMode.Deny,
         postConditions,
         anchorMode: AnchorMode.Any,
+        nonce: new BN(_nonce + 1, 10)
       };
       console.log('txOptions: ', _txOptions);
       const transaction = await makeUnsignedContractCall(_txOptions);
@@ -538,3 +575,38 @@ const broadcastClaimBtc = (currency: any, claimTransaction: any, cb: any) => {
     window.alert(`Failed to broadcast claim transaction: ${message}`)
   })
 }
+
+// block height
+export const useStacksBlockHeightState = () => {
+  return useAtom(stacksBlockHeight);
+}
+
+export const useBitcoinBlockHeightState = () => {
+  return useAtom(bitcoinBlockHeight);
+}
+
+export const getBlockHeight = atom(
+  null,
+  async (get, set) => {
+    let _currentBlockHeight = 0;
+    let _bitcoinBlockHeight = 0;
+    console.log('get block height...')
+    try {
+      const response = await getData(`https://stacks-node-api.mainnet.stacks.co/v2/info`);
+      // console.log(response);
+      if (response && response.stacks_tip_height) {
+        _currentBlockHeight = response.stacks_tip_height;
+        _bitcoinBlockHeight = response.burn_block_height;
+        console.log(
+          'got currentBlockHeight, bitcoinBlockHeight ',
+          _currentBlockHeight,
+          _bitcoinBlockHeight
+        );
+        set(stacksBlockHeight, _currentBlockHeight);
+        set(bitcoinBlockHeight, _bitcoinBlockHeight)
+      }
+    } catch (error) {
+      console.log('failed to get current blockheight');
+    }
+  }
+)

@@ -47,6 +47,9 @@ export const currentAccountSubmittedBtcTxsState = atom<LocalBitcoinTx, LocalBitc
     console.log('principal: ', principal);
     console.log('btcAddress: ', btcAddress);
     console.log('networkUrl: ', networkUrl);
+    const submittedTxsState = currentAccountSubmittedBtcTxsRootState([btcAddress, networkUrl]);
+    const latestLocalTxs = get(submittedTxsState);
+    console.log('latest: ', latestLocalTxs);
     return get(currentAccountSubmittedBtcTxsRootState([btcAddress, networkUrl]))
   },
   (get, set, newItem: LocalBitcoinTx) => {
@@ -56,7 +59,24 @@ export const currentAccountSubmittedBtcTxsState = atom<LocalBitcoinTx, LocalBitc
     const networkUrl = get(currentNetworkState).url;
     const submittedTxsState = currentAccountSubmittedBtcTxsRootState([btcAddress, networkUrl]);
     const latestLocalTxs = get(submittedTxsState);
+    console.log('latest: ', latestLocalTxs);
     set(submittedTxsState, { ...newItem, ...latestLocalTxs });
+  }
+)
+
+export const setTxHistory = atom(
+  null,
+  async (get, set) => {
+    const principal = get(currentAccountStxAddressState);
+    if (!principal) return;
+    const btcAddress = getBitcoinAddress(principal);
+    const networkUrl = get(currentNetworkState).url;
+    const submittedTxsState = currentAccountSubmittedBtcTxsRootState([btcAddress, networkUrl]);
+    let latestLocalTxs = get(submittedTxsState);
+    console.log('latest: ', latestLocalTxs);
+    latestLocalTxs['D5pHuN'].swapInfo.quote = 'STX';
+    console.log('set', latestLocalTxs['D5pHuN'])
+    set(submittedTxsState, {...latestLocalTxs})
   }
 )
 
@@ -97,3 +117,7 @@ export const estimatedRefundTxByteLength = atom<number>(0);
 export const refundBtcTxId = atom('');
 export const refundBtcTxSubmitted = atom(false);
 export const previewRefundBtcVisibility = atom(false);
+
+// block height
+export const stacksBlockHeight = atom(0);
+export const bitcoinBlockHeight = atom(0);
