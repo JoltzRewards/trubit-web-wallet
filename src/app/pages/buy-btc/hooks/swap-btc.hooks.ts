@@ -4,7 +4,7 @@ import BigNumber from "bignumber.js";
 import { address, crypto, ECPair, Transaction } from "bitcoinjs-lib";
 import { randomBytes } from "crypto";
 import { atom, useAtom } from "jotai"
-import { bitcoinMainnet, getData, litecoinMainnet, postData, SwapUpdateEvent } from "../constants/networks";
+import { bitcoinMainnet, getData, litecoinMainnet, postData, SwapUpdateEvent, lnSwapApi } from "../constants/networks";
 import { decimals } from "../constants/numbers";
 import { claimStxTxId, claimStxTxSubmitted, currencies, estimatedTxByteLength, feeRate, fees, limits, loadingInitSwap, lockStxTxId, lockStxTxSubmitted, maxBitcoinValue, minBitcoinValue, previewClaimStxVisibility, previewLockStxVisibility, rates, receiveToken, receiveTokenAddress, receiveValue, sendAmountError, sendSwapResponse, sendSwapStatus, sendToken, sendValue, serializedTxPayload, stxBtcRate, swapFormError, swapResponse, swapStep, swapTxData, swapWorkflow, txOptions, unsignedTx } from "../store/swap-btc.store"
 import { generateKeys, getContractAddress, getHexString, splitPairId } from "../utils/utils";
@@ -18,9 +18,6 @@ import { RouteUrls } from "@shared/route-urls";
 import { SwapInfo, SwapResponse } from "../interfaces";
 import { detectSwap, constructClaimTransaction } from 'boltz-core';
 import { currentAccountNonceState } from "@app/store/accounts/nonce";
-
-// const lnswapApi = 'https://api.lnswap.org:9002';
-const lnswapApi = 'https://api.lnswap.org:9007';
 
 // form related
 export const useSendTokenState = () => {
@@ -129,7 +126,7 @@ export const useEstimatedTxByteLengthState = () => {
 export const getPairs = atom(
   null, 
   async (get, set) => {
-  const url = `${lnswapApi}/getpairs`;
+  const url = `${lnSwapApi}/getpairs`;
   await fetch(url).then(async (res) => {
     let response = await res.json();
 
@@ -400,7 +397,7 @@ export const startSwap = atom(
   }) => {
     console.log('start swap')
     set(loadingInitSwap, true);
-    const url = `${lnswapApi}/zcreateswap`;
+    const url = `${lnSwapApi}/zcreateswap`;
     let { pair, invoice, keys, preimageHash, quoteAmount, baseAmount } = get(swapTxData);
 
     // Trim the "lightning:" prefix, that some wallets add in front of their invoices, if it exists
@@ -609,7 +606,7 @@ export const claimBtc = atom(
 )
 
 const getFeeEstimation = (callback: any) => {
-  const url = `${lnswapApi}/getfeeestimation`;
+  const url = `${lnSwapApi}/getfeeestimation`;
   console.log('get fee estimation...');
 
   getData(url)
@@ -689,7 +686,7 @@ const getClaimTransaction = (
 }
 
 const broadcastClaimBtc = (currency: any, claimTransaction: any, cb: any) => {
-  const url = `${lnswapApi}/broadcasttransaction`;
+  const url = `${lnSwapApi}/broadcasttransaction`;
   postData(url, {
     currency,
     transactionHex: claimTransaction
@@ -720,7 +717,7 @@ export const startListeningForTx = (
   setSwapStatus: any,
   setTxHistory: any
 ) => {
-  const url = `${lnswapApi}/streamswapstatus?id=${swapResponse.id}`;
+  const url = `${lnSwapApi}/streamswapstatus?id=${swapResponse.id}`;
   const source = new EventSource(url);
   console.log('start listening for tx...')
   console.log('txid: ', swapResponse.id)
@@ -729,7 +726,7 @@ export const startListeningForTx = (
     source.close();
 
     console.log('Lost connection to LN Swap');
-    const url = `${lnswapApi}/swapstatus`;
+    const url = `${lnSwapApi}/swapstatus`;
 
     const interval = setInterval(() => {
       postData(url, {
