@@ -397,7 +397,7 @@ export const startSwap = atom(
   }) => {
     console.log('start swap')
     set(loadingInitSwap, true);
-    const url = `${lnSwapApi}/zcreateswap`;
+    const url = `${lnSwapApi}/createswap`;
     let { pair, invoice, keys, preimageHash, quoteAmount, baseAmount } = get(swapTxData);
 
     // Trim the "lightning:" prefix, that some wallets add in front of their invoices, if it exists
