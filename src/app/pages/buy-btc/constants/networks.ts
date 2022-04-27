@@ -5,8 +5,8 @@ export const reverseLNswapApi = 'https://api.lnswap.org:9007';
 export const lnSwapApi = 'https://api.lnswap.org:9007';
 
 // // mocknet
-// export const reverseLNswapApi = 'https://9007-pseudozach-lnstxbridge-ut17kyo49fw.ws-us34.gitpod.io';
-// export const lnSwapApi = 'https://9007-pseudozach-lnstxbridge-ut17kyo49fw.ws-us34.gitpod.io';
+// export const reverseLNswapApi = 'https://9007-pseudozach-lnstxbridge-8gggvcxgil8.ws-us42.gitpod.io';
+// export const lnSwapApi = 'https://9007-pseudozach-lnstxbridge-8gggvcxgil8.ws-us42.gitpod.io';
 
 export const SwapUpdateEvent = {
   InvoicePaid: 'invoice.paid',

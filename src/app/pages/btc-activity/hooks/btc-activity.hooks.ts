@@ -7,6 +7,7 @@ import { serializePayload } from "@stacks/transactions/dist/payload";
 import { getContractName } from "@stacks/ui-utils";
 import { address, ECPair, Transaction } from "bitcoinjs-lib";
 import BN from "bn.js";
+import lightningPayReq from 'bolt11';
 import { atom, useAtom } from "jotai"
 import { useAtomValue } from "jotai/utils";
 import { activityListDrawerVisibility, bitcoinBlockHeight, claimStxTxId, claimStxTxSubmitted, claimTxOptions, currentAccountSubmittedBtcTxsState, estimatedClaimTxByteLength, estimatedRefundTxByteLength, previewClaimStxVisibility, previewRefundBtcVisibility, previewRefundStxVisibility, refundBtcTxId, refundBtcTxSubmitted, refundStxTxId, refundStxTxSubmitted, refundTxOptions, selectedRefundInfo, selectedRefundSwapStatus, serializedClaimTxPayload, serializedRefundTxPayload, stacksBlockHeight, unsignedClaimTx, unsignedRefundTx } from "../store/btc-activity.store"
@@ -179,6 +180,7 @@ export const setRefundStxInfo = atom(
   null,
   async (get, set) => {
     let refundInfo = get(selectedRefundInfo);
+    console.log('setRefundStxInfo ', refundInfo)
 
     if (refundInfo) {
       let stxContractAddress = refundInfo.contract.split('.')[0];
@@ -187,11 +189,15 @@ export const setRefundStxInfo = atom(
       let paymenthash;
       if (refundInfo.preimageHash?.preimageHash) {
         paymenthash = refundInfo.preimageHash.preimageHash;
+      } else if (refundInfo.swapInfo.invoice) {
+        const decoded = lightningPayReq.decode(refundInfo.swapInfo.invoice);
+        paymenthash = (decoded.tags.find((item) => item.tagName === 'payment_hash'))!.data.toString();       
       } else if (refundInfo.preimageHash) {
         paymenthash = refundInfo.preimageHash;
       } else {
         paymenthash = refundInfo.swapInfo.preimageHash;
       }
+      console.log('refund paymenthash: ', paymenthash)
 
       let swapamount, postconditionamount;
       if (refundInfo.amount !== 0) {
