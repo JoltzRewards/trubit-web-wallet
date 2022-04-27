@@ -214,7 +214,8 @@ export const RefundInfoDrawer = () => {
           title={'Refund STX'}
           disabled={refundStxTxSubmitted}
           isShowing={previewRefundStxVisibility}
-          onClose={() => setPreviewRefundStxVisibility(false)}
+          // setPreviewRefundStxVisibility(false) -> this was causing refund window to close without broadcasting
+          onClose={() => console.log('onClose do nothing')}
         />
       </Stack>
     </BaseDrawer>
