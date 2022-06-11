@@ -1,5 +1,5 @@
 import { memo, useCallback, useRef } from 'react';
-import { FiArrowUp, FiPlus, FiGift } from 'react-icons/fi';
+import { FiArrowUp, FiPlus, FiGift, FiAlignJustify } from 'react-icons/fi';
 import { GrPowerCycle } from 'react-icons/gr';
 import { useNavigate } from 'react-router-dom';
 import { Box, Button, ButtonProps } from '@stacks/ui';
@@ -112,6 +112,34 @@ export const BuyTxButton: React.FC<ButtonProps> = memo(({ ...rest }) => {
       <Box as={FiPlus} size={'14px'} mr={'2px'} />
       <Box as="span" ml="extra-tight" fontSize="14px">
         Swap
+      </Box>
+    </Button>
+  );
+});
+
+export const StackTxButton: React.FC<ButtonProps> = memo(({ ...rest }) => {
+  const ref = useRef<HTMLButtonElement | null>(null);
+  const navigate = useNavigate();
+
+  const handleClick = useCallback(() => navigate(RouteUrls.StackBitcoin), [navigate]);
+
+  return (
+    <Button
+      size="sm"
+      pl="base-tight"
+      pr={'base'}
+      py="tight"
+      fontSize={2}
+      mode="primary"
+      position="relative"
+      ref={ref}
+      onClick={handleClick}
+      borderRadius="10px"
+      {...rest}
+    >
+      <Box as={FiAlignJustify} size={'14px'} mr={'2px'} />
+      <Box as="span" ml="extra-tight" fontSize="14px">
+        Stack
       </Box>
     </Button>
   );

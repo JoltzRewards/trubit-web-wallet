@@ -22,6 +22,7 @@ export enum RouteUrls {
   // Bitcoin wallet
   Bitcoin = '/bitcoin',
   BuyBitcoin = '/buy-bitcoin',
+  StackBitcoin = '/stack-bitcoin',
   ReceiveBitcoin = '/receive-bitcoin',
   BitcoinRewards = '/bitcoin-rewards',
   BitcoinRewardsLearnMore = '/bitcoin-rewards-learn-more',

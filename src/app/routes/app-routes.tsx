@@ -31,6 +31,7 @@ import { useOnWalletLock } from './hooks/use-on-wallet-lock';
 import { useOnSignOut } from './hooks/use-on-sign-out';
 import { BitcoinAccount } from '@app/pages/btc-account/btc-account';
 import { BuyBtcFormBase } from '@app/pages/buy-btc/buy-btc';
+import { StackBtcFormBase } from '@app/pages/stack-btc/stack-btc';
 import { MyDataVault } from '@app/pages/data-vault/my-data-vault';
 import { ConnectDataVault } from '@app/pages/data-vault/connect-data-vault';
 import { DataSources } from '@app/pages/data-sources/data-sources-list';
@@ -246,6 +247,16 @@ export function AppRoutes(): JSX.Element | null {
             <AccountGate>
               <Suspense fallback={<></>}>
                 <BuyBtcFormBase />
+              </Suspense>
+            </AccountGate>
+          }
+        />
+        <Route
+          path={RouteUrls.StackBitcoin}
+          element={
+            <AccountGate>
+              <Suspense fallback={<></>}>
+                <StackBtcFormBase />
               </Suspense>
             </AccountGate>
           }
