@@ -4,7 +4,7 @@ import { RouteUrls } from "@shared/route-urls";
 import { Formik } from "formik";
 import { Suspense } from "react";
 import { useNavigate } from "react-router-dom";
-import { BuyBtcForm } from "./components/buy-btc-form";
+import { BuyBtcForm } from "./components/stack-btc-form";
 
 export const StackBtcFormBase = () =>  {
   const navigate = useNavigate();

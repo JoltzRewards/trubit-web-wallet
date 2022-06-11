@@ -29,6 +29,7 @@ export const BuyBtcForm = () =>  {
 
   useEffect(() => {
     _getPairs();
+    swapPair();
   }, [])
   
   useEffect(() => {
@@ -78,13 +79,13 @@ export const BuyBtcForm = () =>  {
           onValueChange={onValueChange}
         />
       </Suspense>
-      <Stack justifyContent='center' alignItems='center'>
+      {/* <Stack justifyContent='center' alignItems='center'>
         <CgArrowsExchangeAltV 
           size={25} 
           cursor='pointer'
           onClick={swapPair} 
         />
-      </Stack>
+      </Stack> */}
       <Suspense fallback={<></>}>
         <ReceiveAmountField
           value={receiveValue}

@@ -309,7 +309,7 @@ export const initSwap = atom(
     set(sendAmountError, error);
 
     // update swap tx data
-    console.log('update swap tx data');
+    // console.log('update swap tx data');
     let keys = generateKeys(
       base === 'BTC' ? bitcoinMainnet : litecoinMainnet
     )

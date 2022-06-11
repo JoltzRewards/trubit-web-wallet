@@ -111,7 +111,7 @@ const SendAmountFieldBase = (props: AmountFieldProps) => {
                 </Caption>
               </Stack>
             </Stack>
-            {
+            {/* {
               isOptionOpen
               ?
               <ChevronIcon 
@@ -129,7 +129,7 @@ const SendAmountFieldBase = (props: AmountFieldProps) => {
                 _hover={{ cursor: 'pointer' }}
                 onClick={() => setIsOptionOpen(true)}
               />
-            }
+            } */}
           </SpaceBetween>
         </Box>
         <Fade in={isOptionOpen}>
