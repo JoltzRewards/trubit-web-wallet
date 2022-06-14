@@ -97,7 +97,7 @@ export const ReceiveAmountField = (props: ReceiveAmountFieldProps) => {
                 <Caption>{receiveUnit}</Caption>
               </Stack>
             </Stack>
-            {
+            {/* {
               isOptionOpen
               ?
               <ChevronIcon 
@@ -115,7 +115,7 @@ export const ReceiveAmountField = (props: ReceiveAmountFieldProps) => {
                 _hover={{ cursor: 'pointer' }}
                 onClick={() => setIsOptionOpen(true)}
               />
-            }
+            } */}
           </SpaceBetween>
         </Box>
         <Fade in={isOptionOpen}>

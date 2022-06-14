@@ -14,7 +14,7 @@ import { CallContractConfirmDrawer } from "./components/call-contract-confirm-dr
 import { broadcastReverseClaimToken, useLnSwapResponseState, usePreviewReverseClaimStxVisibilityState, useReverseClaimStxTxSubmittedState, useReverseClaimTokenTxId, useReverseTxOptionsState, useUnsignedReverseTxState, } from "./hooks/ln-swap-btc.hooks"
 import { broadcastClaimStx, claimBtc, useClaimStxTxIdState, useClaimStxTxSubmittedState, usePreviewClaimStxVisibilityState, useReceiveTokenState, useSendSwapResponseState, useSendTokenState, useTxOptionsState, useUnsignedTxState } from "./hooks/swap-btc.hooks"
 
-export const ClaimToken = () => {
+export const StackClaimToken = () => {
   const [sendToken, ] = useSendTokenState();
   const [receiveToken, ] = useReceiveTokenState();
   const { handleOpenTxLink } = useExplorerLink();
@@ -65,7 +65,7 @@ export const ClaimToken = () => {
             Transaction ID: {lnSwapResponse.id}
           </Text>
           <Text textAlign={['left', 'center']}>
-            Lockup is confirmed, you can now trigger claim contract call to finalize the swap and receive your <b>{receiveToken}</b>
+            Lockup is confirmed, you can now trigger the contract call to finalize the swap and stack your <b>{receiveToken}</b>
           </Text>
           {
             reverseClaimTokenTxId !== '' &&
@@ -90,14 +90,14 @@ export const ClaimToken = () => {
             borderRadius="10px"
             // isDisabled={loadingInitSwap}
           >
-            <Text>Claim {receiveToken}</Text>
+            <Text>Claim & Stack {receiveToken}</Text>
           </Button>
         </Stack>
         <CallContractConfirmDrawer
           amount={microStxToStx((lnSwapResponse.onchainAmount / 100).toFixed(8))}
           onBroadcastTx={_broadcastReverseClaimToken}
           txOptions={reverseTxOptions}
-          title='Claim STX'
+          title='Stack STX'
           disabled={reverseClaimStxTxSubmitted}
           isShowing={previewReverseClaimStxVisibility}
           onClose={() => setPreviewReverseClaimStxVisibility(false)}

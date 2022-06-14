@@ -13,7 +13,7 @@ import { checkLnSwapAddress, setReverseClaimStxInfo, startLnSwap, useLnSwapStatu
 import { checkSwapAddress, setClaimStxInfo, navigateNextStep, setLockStxInfo, startSwap, useLoadingInitSwapState, useReceiveTokenAddressState, useReceiveTokenState, useReceiveValueState, useSendSwapStatusState, useSendTokenState, useSwapStepState } from "./hooks/swap-btc.hooks"
 import { convertBtcToSatoshis } from "./utils/utils"
 
-export const InsertAddress = () => {
+export const StackInsertAddress = () => {
   const [sendToken, ] = useSendTokenState();
   const [receiveToken, ] = useReceiveTokenState();
   const [receiveTokenAddress, setReceiveTokenAddress] = useReceiveTokenAddressState();
@@ -35,6 +35,7 @@ export const InsertAddress = () => {
   const [step, ] = useSwapStepState();
   useRouteHeader(<Header title={`Step 1`} onClose={() => navigate(RouteUrls.BuyBitcoin)}/>);
   const isLightning = sendToken.includes('⚡');
+  // console.log('stack-btc insert-address isLightning ', isLightning, sendToken);
 
   useEffect(() => {
     let stxAddress = currentAccount ? currentAccount.address : "";
@@ -78,7 +79,7 @@ export const InsertAddress = () => {
     if (receiveToken === 'STX' || receiveToken === 'BTC') {
       return (
         <Text textAlign={['left', 'center']}>
-          Insert {receiveToken} address
+          You will stack {receiveAmount} {receiveToken}
         </Text>
       )
     } else if (receiveToken === 'BTC ⚡') {
@@ -101,7 +102,7 @@ export const InsertAddress = () => {
         textAlign='center'
       >
         {getTitle()}
-        <Box position="relative">
+        {/* <Box position="relative">
           <Input
             display="block"
             type="text"
@@ -110,7 +111,7 @@ export const InsertAddress = () => {
             value={receiveTokenAddress}
             onChange={(e) => setReceiveTokenAddress((e.target as HTMLInputElement).value)}
           />
-        </Box>
+        </Box> */}
         <Button
           size="md"
           pl="base-tight"
@@ -123,7 +124,7 @@ export const InsertAddress = () => {
           borderRadius="10px"
           isDisabled={loadingInitSwap}
         >
-          <Text>Next</Text>
+          <Text>Confirm</Text>
         </Button>
       </Stack>
     </CenteredPageContainer>

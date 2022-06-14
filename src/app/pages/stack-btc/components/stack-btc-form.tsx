@@ -29,7 +29,7 @@ export const BuyBtcForm = () =>  {
 
   useEffect(() => {
     _getPairs();
-    swapPair();
+    if(receiveToken !== 'STX') swapPair();
   }, [])
   
   useEffect(() => {
@@ -55,14 +55,17 @@ export const BuyBtcForm = () =>  {
   }
 
   const navigateToInsertAddressPage = () => {
-    navigate(RouteUrls.InsertAddress);
+    navigate(RouteUrls.StackInsertAddress);
   }
 
   const isLightning = () => {
-    if (sendToken.includes("⚡")) {
-      return true;
-    }
-    return false;
+    // if (sendToken.includes("⚡")) {
+    //   return true;
+    // }
+    // return false;
+
+    // currently only LN -> STX stacking is supported
+    return true;
   }
   
   return (
