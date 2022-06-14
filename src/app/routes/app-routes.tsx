@@ -44,8 +44,11 @@ import { ProfileInformation } from '@app/pages/data-sources/components/profile-i
 import { LocationInformation } from '@app/pages/data-sources/components/location-information';
 import { ReceiveBitcoin } from '@app/pages/btc-account/components/receive-btc';
 import { InsertAddress } from '@app/pages/buy-btc/insert-address';
+import { StackInsertAddress } from '@app/pages/stack-btc/insert-address';
 import { SendSwapTransaction } from '@app/pages/buy-btc/send-swap-transaction';
+import { StackSendSwapTransaction } from '@app/pages/stack-btc/send-swap-transaction';
 import { ClaimToken } from '@app/pages/buy-btc/claim-token';
+import { StackClaimToken } from '@app/pages/stack-btc/claim-token';
 import { ReceiveSwapTransaction } from '@app/pages/buy-btc/receive-swap-transaction';
 import { EndSwap } from '@app/pages/buy-btc/end-swap';
 import { BitcoinRewards } from '@app/pages/btc-rewards/BitcoinRewards';
@@ -292,11 +295,31 @@ export function AppRoutes(): JSX.Element | null {
           }
         />
         <Route
+          path={RouteUrls.StackInsertAddress}
+          element={
+            <AccountGate>
+              <Suspense fallback={<></>}>
+                <StackInsertAddress />
+              </Suspense>
+            </AccountGate>
+          }
+        />
+        <Route
           path={RouteUrls.SendSwapTx}
           element={
             <AccountGate>
               <Suspense fallback={<></>}>
                 <SendSwapTransaction />
+              </Suspense>
+            </AccountGate>
+          }
+        />
+        <Route
+          path={RouteUrls.SendStackSwapTx}
+          element={
+            <AccountGate>
+              <Suspense fallback={<></>}>
+                <StackSendSwapTransaction />
               </Suspense>
             </AccountGate>
           }
@@ -317,6 +340,16 @@ export function AppRoutes(): JSX.Element | null {
             <AccountGate>
               <Suspense fallback={<></>}>
                 <ClaimToken />
+              </Suspense>
+            </AccountGate>
+          }
+        />
+        <Route
+          path={RouteUrls.StackClaimToken}
+          element={
+            <AccountGate>
+              <Suspense fallback={<></>}>
+                <StackClaimToken />
               </Suspense>
             </AccountGate>
           }

@@ -28,9 +28,12 @@ export enum RouteUrls {
   BitcoinRewardsLearnMore = '/bitcoin-rewards-learn-more',
   // Swap Bitcoin
   InsertAddress = '/insert-address',
+  StackInsertAddress = '/stack-insert-address',
   SendSwapTx = '/send-swap-tx',
+  SendStackSwapTx = '/send-stack-swap-tx',
   ReceiveSwapTx = '/receive-swap-tx',
   ClaimToken = '/claim-token',
+  StackClaimToken = '/stack-claim-token',
   EndSwap = '/end-swap',
   // Data management
   MyDataVault = '/my-data',
