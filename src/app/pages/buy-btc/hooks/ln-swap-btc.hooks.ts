@@ -434,7 +434,7 @@ export const setReverseClaimStxInfo = atom(
     const amount = swapResponse.onchainAmount;
     const timeLock = swapResponse.timeoutBlockHeight;
 
-    console.log(`Claiming ${amount} STX with preimage ${preimage} and timelock ${timeLock}`);
+    console.log(`setReverseClaimStxInfo Claiming ${amount} STX with preimage ${preimage} and timelock ${timeLock}`);
 
     let smallamount = parseInt((amount / 100).toString());
     console.log('smallamount: ' + smallamount);

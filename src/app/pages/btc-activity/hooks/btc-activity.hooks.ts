@@ -360,7 +360,7 @@ export const setClaimStxInfo = atom(
       let timelock = swapResponse.asTimeoutBlockHeight;
 
       console.log(
-        `Claiming ${amount} Stx with preimage ${preimage} and timelock ${timelock}`
+        `setClaimStxInfo Claiming ${amount} Stx with preimage ${preimage} and timelock ${timelock}`
       );
       console.log('amount: ', amount);
 

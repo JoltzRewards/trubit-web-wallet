@@ -75,6 +75,7 @@ export const InsertAddress = () => {
   }
 
   const getTitle = () => {
+    console.log('buy-btc receivetoken: ', receiveToken)
     if (receiveToken === 'STX' || receiveToken === 'BTC') {
       return (
         <Text textAlign={['left', 'center']}>

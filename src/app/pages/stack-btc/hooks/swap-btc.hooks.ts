@@ -262,7 +262,7 @@ export const initSwap = atom(
 
     // set workflow
     let workflow = getSwapWorkflow(base, quote);
-    console.log('workflow: ', workflow);
+    console.log('swap-btc initSwap workflow: ', workflow);
     set(swapWorkflow, workflow);
 
     base = base.split(" ")[0];
@@ -332,7 +332,7 @@ export const initSwap = atom(
       preimageHash: getHexString(crypto.sha256(preimage)),
       requestedAmount: ''
     };
-    console.log('swap tx data: ', newSwapTxData)
+    console.log('stack-btc swap tx data: ', newSwapTxData)
     set(swapTxData, newSwapTxData);
 
     // next
@@ -409,7 +409,7 @@ export const startSwap = atom(
     let _quoteAmount = parseInt((parseFloat(quoteAmount) * 1000000).toString()).toString();
     if (
       (pair.id === 'BTC/STX') &&
-      invoice.toLowerCase().slice(0, 4) !== 'lnbc'
+      invoice.toLowerCase().slice(0, 2) !== 'ln'
     ) {
       body = {
         type: 'submarine',
@@ -514,7 +514,7 @@ export const setClaimStxInfo = atom(
     let timelock = swapResponse.asTimeoutBlockHeight;
 
     console.log(
-      `Claiming ${amount} Stx with preimage ${preimage} and timelock ${timelock}`
+      `stack-btc setClaimStxInfo Claiming ${amount} Stx with preimage ${preimage} and timelock ${timelock}`
     )
     console.log('amount: ', amount);
 
@@ -719,7 +719,7 @@ export const startListeningForTx = (
 ) => {
   const url = `${lnSwapApi}/streamswapstatus?id=${swapResponse.id}`;
   const source = new EventSource(url);
-  console.log('start listening for tx...')
+  console.log('swap-btc start listening for tx...')
   console.log('txid: ', swapResponse.id)
 
   source.onerror = () => {

@@ -24,6 +24,7 @@ export const SendSwapTransaction = () => {
   useRouteHeader(<Header title={`Step 2`} onClose={() => navigate(RouteUrls.BuyBitcoin)}/>)
 
   const getSwapTransactionContractContent = () => {
+    console.log('buy-btc getSwapTransactionContractContent sendToken ', sendToken)
     if (sendToken === 'STX') {
       return <StxContractContent /> 
     } else if (sendToken === 'BTC') {

@@ -65,7 +65,7 @@ export const initLnSwap = atom(
 
     // set workflow
     let workflow = getSwapWorkflow(base, quote);
-    console.log('workflow: ', workflow);
+    console.log('initLnSwap workflow: ', workflow);
     set(swapWorkflow, workflow);
 
     base = base.split(" ")[0]
@@ -248,7 +248,7 @@ const startListeningForTx = (
   setLockupTokenTx: any,
   setTxHistory: any
 ) => {
-  console.log('start listening for tx...')
+  console.log('ln-swap start listening for tx...')
   const source = new EventSource(`${lnSwapApi}/streamswapstatus?id=${swapResponse.id}`);
 
   source.onerror = () => {
@@ -434,7 +434,7 @@ export const setReverseClaimStxInfo = atom(
     const amount = swapResponse.onchainAmount;
     const timeLock = swapResponse.timeoutBlockHeight;
 
-    console.log(`Claiming ${amount} STX with preimage ${preimage} and timelock ${timeLock}`);
+    console.log(`stack-btc ln-swap setReverseClaimStxInfo Claiming ${amount} STX with preimage ${preimage} and timelock ${timeLock}`);
 
     let smallamount = parseInt((amount / 100).toString());
     console.log('smallamount: ' + smallamount);
