@@ -32,6 +32,7 @@ export enum RouteUrls {
   SendSwapTx = '/send-swap-tx',
   SendStackSwapTx = '/send-stack-swap-tx',
   ReceiveSwapTx = '/receive-swap-tx',
+  StackReceiveSwapTx = '/stack-receive-swap-tx',
   ClaimToken = '/claim-token',
   StackClaimToken = '/stack-claim-token',
   EndSwap = '/end-swap',

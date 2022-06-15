@@ -11,7 +11,7 @@ import { useLnSwapResponseState, useLockupTokenTxState } from "./hooks/ln-swap-b
 import { useReceiveTokenState, useReceiveValueState, useSendTokenState, useSwapStepState } from "./hooks/swap-btc.hooks"
 import { convertBtcToSatoshis } from "./utils/utils"
 
-export const ReceiveSwapTransaction = () => {
+export const StackReceiveSwapTransaction = () => {
   const navigate = useNavigate();
   const [receiveToken, ] = useReceiveTokenState();
   const [lnSwapResponse, ] = useLnSwapResponseState();
@@ -55,7 +55,7 @@ const ReceiveStxContent = () => {
   return (
     <>
       <Text textAlign={['left', 'center']}>
-        LNswap.org is locking the <b>{receiveToken}</b> that you are ought to receive, this is important to keep the swap atomic and trustless. It might take up to ~10 minutes.
+        LNswap.org is locking the <b>{receiveToken}</b> that you will stack, this is important to keep the swap atomic and trustless. It might take up to ~10 minutes.
       </Text>
       <Text textAlign={['left', 'center']}>
         <Link fontSize={12} onClick={() => handleOpenTxLink(lockupTokenTx.transactionId)}>Click here</Link> to see the lockup transaction.
