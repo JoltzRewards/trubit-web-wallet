@@ -35,7 +35,7 @@ export const StackInsertAddress = () => {
   const [step, ] = useSwapStepState();
   useRouteHeader(<Header title={`Step 1`} onClose={() => navigate(RouteUrls.BuyBitcoin)}/>);
   const isLightning = sendToken.includes('⚡');
-  // console.log('stack-btc insert-address isLightning ', isLightning, sendToken);
+  console.log('stack-btc insert-address isLightning ', isLightning, sendToken);
 
   useEffect(() => {
     let stxAddress = currentAccount ? currentAccount.address : "";
@@ -50,15 +50,16 @@ export const StackInsertAddress = () => {
   }, []);
 
   const handleClick = () => {
+    console.log('stack-btc insert-address ', isLightning);
     if (isLightning) {
       _checkLnSwapAddress(() => _startLnSwap({
         setSwapStatus: (data: any) => setLnSwapStatus(data),
         setLockupTokenTx: (data: any) => setLockupTokenTx(data),
         setClaimStxInfo: _setReverseClaimStxInfo,
-        navigateSendSwapToken: () => navigate(RouteUrls.SendSwapTx),
-        navigateReceiveSwapToken: () => navigate(RouteUrls.ReceiveSwapTx),
-        navigateClaimToken: () => navigate(RouteUrls.ClaimToken),
-        navigateTimelockExpired: () => navigate(RouteUrls.SendSwapTx),
+        navigateSendSwapToken: () => navigate(RouteUrls.SendStackSwapTx),
+        navigateReceiveSwapToken: () => navigate(RouteUrls.StackReceiveSwapTx),
+        navigateClaimToken: () => navigate(RouteUrls.StackClaimToken),
+        navigateTimelockExpired: () => navigate(RouteUrls.SendStackSwapTx),
         navigateEndSwap: () => navigate(RouteUrls.EndSwap)
       }));
     } else {
