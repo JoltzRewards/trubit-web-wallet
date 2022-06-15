@@ -6,11 +6,11 @@ import { randomBytes } from "crypto";
 import { atom, useAtom } from "jotai"
 import { bitcoinMainnet, getData, litecoinMainnet, postData, SwapUpdateEvent, lnSwapApi } from "../constants/networks";
 import { decimals } from "../constants/numbers";
-import { claimStxTxId, claimStxTxSubmitted, currencies, estimatedTxByteLength, feeRate, fees, limits, loadingInitSwap, lockStxTxId, lockStxTxSubmitted, maxBitcoinValue, minBitcoinValue, previewClaimStxVisibility, previewLockStxVisibility, rates, receiveToken, receiveTokenAddress, receiveValue, sendAmountError, sendSwapResponse, sendSwapStatus, sendToken, sendValue, serializedTxPayload, stxBtcRate, swapFormError, swapResponse, swapStep, swapTxData, swapWorkflow, txOptions, unsignedTx } from "../store/swap-btc.store"
+import { allowContractCallerTxId, allowContractCallerTxSubmitted, claimStxTxId, claimStxTxSubmitted, currencies, estimatedTxByteLength, feeRate, fees, limits, loadingInitSwap, lockStxTxId, lockStxTxSubmitted, maxBitcoinValue, minBitcoinValue, previewAllowContractCallerVisibility, previewClaimStxVisibility, previewLockStxVisibility, previewTriggerStackingVisibility, rates, receiveToken, receiveTokenAddress, receiveValue, sendAmountError, sendSwapResponse, sendSwapStatus, sendToken, sendValue, serializedTxPayload, stxBtcRate, swapFormError, swapResponse, swapStep, swapTxData, swapWorkflow, triggerStackingTxId, triggerStackingTxSubmitted, txOptions, unsignedTx } from "../store/swap-btc.store"
 import { generateKeys, getContractAddress, getHexString, splitPairId } from "../utils/utils";
 import lightningPayReq from 'bolt11';
 import { currentAccountState, currentAccountStxAddressState } from "@app/store/accounts";
-import { AnchorMode, broadcastTransaction, bufferCV, contractPrincipalCV, createStacksPrivateKey, createSTXPostCondition, FungibleConditionCode, makeContractSTXPostCondition, makeUnsignedContractCall, PostConditionMode, pubKeyfromPrivKey, publicKeyToString, standardPrincipalCV, TransactionSigner, uintCV, UnsignedContractCallOptions } from "@stacks/transactions";
+import { AnchorMode, broadcastTransaction, bufferCV, ChainID, contractPrincipalCV, createStacksPrivateKey, createSTXPostCondition, FungibleConditionCode, makeContractSTXPostCondition, makeUnsignedContractCall, noneCV, PostConditionMode, pubKeyfromPrivKey, publicKeyToString, standardPrincipalCV, TransactionSigner, uintCV, UnsignedContractCallOptions } from "@stacks/transactions";
 import BN from "bn.js";
 import { currentStacksNetworkState } from "@app/store/network/networks";
 import { serializePayload } from "@stacks/transactions/dist/payload";
@@ -365,6 +365,7 @@ export const getSwapWorkflow = (sendToken: string, receiveToken: string) => {
    * STX -> BTC ⚡
    * [INSERT_ADDRESS, LOCK_STX, SENDING_LN_PAYMENT, FINISH_PAGE]
    */
+  console.log('swap-btc.hooks.368 sendToken, receiveToken, ', sendToken, receiveToken);
   if (sendToken === 'STX' && receiveToken === 'BTC ⚡') {
     return [RouteUrls.InsertAddress, RouteUrls.SendSwapTx, RouteUrls.ReceiveSwapTx, RouteUrls.EndSwap];
   }
@@ -1157,6 +1158,193 @@ export const broadcastClaimStx = atom(
       set(claimStxTxId, txId);
       set(claimStxTxSubmitted, false);
       set(previewClaimStxVisibility, false);
+    }
+  }
+)
+
+export const setAllowContractCallerInfo = atom(
+  null,
+  async (get, set) => {
+    let _swapResponse = get(sendSwapResponse);
+    let _swapInfo = get(swapTxData);
+    console.log('setAllowContractCallerInfo start', _swapInfo, _swapResponse);
+
+    let contractAddress = getContractAddress(_swapResponse.address);
+    let contractName = getContractName(_swapResponse.address);
+
+    let stxAddress = get(currentAccountStxAddressState);
+    // const _postConditionCode = FungibleConditionCode.LessEqual;
+    // const _postConditionAmount = new BN(postConditionAmount);
+    // const postConditions = [
+    //   createSTXPostCondition(
+    //     stxAddress ? stxAddress : "",
+    //     _postConditionCode,
+    //     _postConditionAmount
+    //   )
+    // ];
+    // console.log('postConditions: ', stxAddress, postConditions);
+    // console.log('paymenthash: ', paymenthash, typeof(paymenthash));
+    console.log('setAllowContractCallerInfo swapresponse.claimAddress: ', _swapResponse.claimAddress);
+
+    const functionArgs = [
+      contractPrincipalCV(contractAddress, 'triggerswap_v7'),
+      noneCV(),
+      // bufferCV(Buffer.from(paddedAmount, 'hex')),
+      // bufferCV(Buffer.from('01', 'hex')),
+      // bufferCV(Buffer.from('01', 'hex')),
+      // bufferCV(Buffer.from(paddedTimelock, 'hex')),
+    ];
+    console.log('functionArgs:', functionArgs);
+
+    // TODO: Add mainnet pox
+    const account = get(currentAccountState);
+    const network = get(currentStacksNetworkState);
+    const _nonce = get(currentAccountNonceState);
+    let _txOptions: UnsignedContractCallOptions = {
+      contractAddress: network.chainId === ChainID.Testnet ? 'ST000000000000000000002AMW42H' : 'SP000000000000000000002Q6VF78',
+      contractName: 'pox',
+      functionName: 'allow-contract-caller',
+      functionArgs: functionArgs,
+      publicKey: publicKeyToString(pubKeyfromPrivKey(account ? account.stxPrivateKey : '')),
+      network: network,
+      // postConditions: postConditions,
+      anchorMode: AnchorMode.Any,
+      nonce: new BN(_nonce + 1, 10)
+    }
+    console.log('setAllowContractCallerInfo txOptions: ', txOptions);
+    const transaction = await makeUnsignedContractCall(_txOptions);
+    const _serializedTxPayload = serializePayload(transaction.payload).toString('hex');
+    const _estimatedTxByteLength = transaction.serialize().byteLength;
+    set(serializedTxPayload, _serializedTxPayload);
+    set(estimatedTxByteLength, _estimatedTxByteLength);
+    set(txOptions, _txOptions);
+    set(unsignedTx, transaction);
+  }
+)
+
+export const broadcastAllowContractCaller = atom(
+  null,
+  async (get, set) => {
+    let _transaction = get(unsignedTx);
+
+    if (_transaction === undefined) {
+      return;
+    }
+
+    console.log('found tx')
+    const network = get(currentStacksNetworkState);
+    const account = get(currentAccountState);
+    const signer = new TransactionSigner(_transaction);
+    signer.signOrigin(createStacksPrivateKey(account ? account.stxPrivateKey : ''));
+    
+    if (_transaction) {
+      set(allowContractCallerTxSubmitted, true);
+      const broadcastResponse = await broadcastTransaction(_transaction, network);
+      console.log('broadcastResponse: ', broadcastResponse)
+      const txId = broadcastResponse.txid;
+      set(allowContractCallerTxId, txId);
+      set(allowContractCallerTxSubmitted, false);
+      set(previewAllowContractCallerVisibility, false);
+    }
+  }
+)
+
+export const setTriggerStackingInfo = atom(
+  null,
+  async (get, set) => {
+    const network = get(currentStacksNetworkState);
+    const swapResponse = get(sendSwapResponse);
+    const contract = swapResponse.contractAddress;
+    const swapInfo = get(swapTxData);
+    console.log('setTriggerStackingInfo: ', swapInfo, swapResponse);
+
+    const contractAddress = getContractAddress(contract).toUpperCase();
+    const contractName = getContractName(contract);
+    const preimage = swapInfo.preimage;
+    let amount = Math.floor(parseFloat(swapInfo.quoteAmount) * 1000000);
+    let timelock = swapResponse.asTimeoutBlockHeight;
+
+    console.log(
+      `stack-btc setTriggerStackingInfo Claiming ${amount} Stx with preimage ${preimage} and timelock ${timelock}`
+    )
+    console.log('amount: ', amount);
+
+    let swapamount = amount.toString(16).split('.')[0] + '';
+    let postConditionAmount = new BN(amount);
+    console.log('postConditionAmount: ', postConditionAmount);
+
+    const postConditionAddress = contractAddress;
+    const postConditionCode = FungibleConditionCode.LessEqual;
+    const postConditions = [
+      makeContractSTXPostCondition(
+        postConditionAddress,
+        contractName,
+        postConditionCode,
+        postConditionAmount
+      )
+    ];
+
+    console.log(
+      'postConditions: ' + contractAddress,
+      contractName,
+      postConditionCode,
+      postConditionAmount
+    );
+
+    // TODO: add delegate options as per https://stacks-pool-registry.pages.dev/pools
+    const functionArgs = [
+      bufferCV(Buffer.from(preimage, 'hex')),
+      uintCV(amount),
+      standardPrincipalCV('ST2507VNQZC9VBXM7X7KB4SF4QJDJRSWHG6ERHWB7'),
+      noneCV()
+    ];
+
+    const account = get(currentAccountState);
+    let _txOptions: UnsignedContractCallOptions = {
+      contractAddress: contractAddress,
+      contractName: 'triggerswap_v7',
+      functionName: 'triggerStacking',
+      functionArgs: functionArgs,
+      publicKey: publicKeyToString(pubKeyfromPrivKey(account ? account.stxPrivateKey : '')),
+      network,
+      postConditionMode: PostConditionMode.Deny,
+      postConditions,
+      anchorMode: AnchorMode.Any,
+    }
+    console.log('txOptions: ', _txOptions);
+    const transaction = await makeUnsignedContractCall(_txOptions);
+    const _serializedTxPayload = serializePayload(transaction.payload).toString('hex');
+    const _estimatedTxByteLength = transaction.serialize().byteLength;
+    set(serializedTxPayload, _serializedTxPayload);
+    set(estimatedTxByteLength, _estimatedTxByteLength);
+    set(txOptions, _txOptions);
+    set(unsignedTx, transaction);
+  }
+)
+
+export const broadcastTriggerStacking = atom(
+  null,
+  async (get, set) => {
+    let _transaction = get(unsignedTx);
+
+    if (_transaction === undefined) {
+      return;
+    }
+
+    console.log('found tx')
+    const network = get(currentStacksNetworkState);
+    const account = get(currentAccountState);
+    const signer = new TransactionSigner(_transaction);
+    signer.signOrigin(createStacksPrivateKey(account ? account.stxPrivateKey : ''));
+    
+    if (_transaction) {
+      set(triggerStackingTxSubmitted, true);
+      const broadcastResponse = await broadcastTransaction(_transaction, network);
+      console.log('broadcastResponse: ', broadcastResponse)
+      const txId = broadcastResponse.txid;
+      set(triggerStackingTxId, txId);
+      set(triggerStackingTxSubmitted, false);
+      set(previewTriggerStackingVisibility, false);
     }
   }
 )

@@ -120,3 +120,13 @@ export const txOptions = atom<UnsignedContractCallOptions | undefined>(undefined
 export const unsignedTx = atom<StacksTransaction | undefined>(undefined);
 export const serializedTxPayload = atom<string>('');
 export const estimatedTxByteLength = atom<number>(0);
+
+// allowContractCaller tx
+export const allowContractCallerTxId = atom('');
+export const allowContractCallerTxSubmitted = atom(false);
+export const previewAllowContractCallerVisibility = atom(false);
+
+// triggerStacking tx
+export const triggerStackingTxId = atom('');
+export const triggerStackingTxSubmitted = atom(false);
+export const previewTriggerStackingVisibility = atom(false);
