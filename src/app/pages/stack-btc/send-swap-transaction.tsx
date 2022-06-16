@@ -17,14 +17,14 @@ import { Caption } from "@app/components/typography";
 import { Link } from "@app/components/link";
 import { useExplorerLink } from "@app/common/hooks/use-explorer-link";
 
-export const SendSwapTransaction = () => {
+export const StackSendSwapTransaction = () => {
   const [sendToken, ] = useSendTokenState();
   const navigate = useNavigate();
   const [step, ] = useSwapStepState();
   useRouteHeader(<Header title={`Step 2`} onClose={() => navigate(RouteUrls.BuyBitcoin)}/>)
 
   const getSwapTransactionContractContent = () => {
-    console.log('buy-btc getSwapTransactionContractContent sendToken ', sendToken)
+    console.log('stack-btc getSwapTransactionContractContent sendToken ', sendToken)
     if (sendToken === 'STX') {
       return <StxContractContent /> 
     } else if (sendToken === 'BTC') {

@@ -345,7 +345,7 @@ export const setClaimStxInfo = atom(
     let refundInfo = get(selectedRefundInfo);
     
     if (refundInfo) {
-      let isReverseSwap = refundInfo.swapResponse.invoice?.toLowerCase().startsWith('lnbc');
+      let isReverseSwap = refundInfo.swapResponse.invoice?.toLowerCase().startsWith('ln');
 
       let swapResponse = refundInfo.swapResponse;
       let swapInfo = refundInfo.swapInfo;
@@ -360,7 +360,7 @@ export const setClaimStxInfo = atom(
       let timelock = swapResponse.asTimeoutBlockHeight;
 
       console.log(
-        `Claiming ${amount} Stx with preimage ${preimage} and timelock ${timelock}`
+        `setClaimStxInfo Claiming ${amount} Stx with preimage ${preimage} and timelock ${timelock}`
       );
       console.log('amount: ', amount);
 

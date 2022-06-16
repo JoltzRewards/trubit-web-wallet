@@ -22,15 +22,21 @@ export enum RouteUrls {
   // Bitcoin wallet
   Bitcoin = '/bitcoin',
   BuyBitcoin = '/buy-bitcoin',
+  StackBitcoin = '/stack-bitcoin',
   ReceiveBitcoin = '/receive-bitcoin',
   BitcoinRewards = '/bitcoin-rewards',
   BitcoinRewardsLearnMore = '/bitcoin-rewards-learn-more',
   // Swap Bitcoin
   InsertAddress = '/insert-address',
+  StackInsertAddress = '/stack-insert-address',
   SendSwapTx = '/send-swap-tx',
+  SendStackSwapTx = '/send-stack-swap-tx',
   ReceiveSwapTx = '/receive-swap-tx',
+  StackReceiveSwapTx = '/stack-receive-swap-tx',
   ClaimToken = '/claim-token',
+  StackClaimToken = '/stack-claim-token',
   EndSwap = '/end-swap',
+  StackEndSwap = '/stack-end-swap',
   // Data management
   MyDataVault = '/my-data',
   ConnectData = '/connect-data',

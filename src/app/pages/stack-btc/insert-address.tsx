@@ -9,11 +9,11 @@ import { Box, Button, Input, Stack, Text } from "@stacks/ui"
 import { useAtom } from "jotai"
 import { useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import { checkLnSwapAddress, setReverseClaimStxInfo, startLnSwap, useLnSwapStatusState, useLockupTokenTxState } from "./hooks/ln-swap-btc.hooks"
+import { checkLnSwapAddress, setReverseClaimStxInfo, startLnSwap, useLnSwapStatusState, useLockupTokenTxState, setTriggerStackingInfo } from "./hooks/ln-swap-btc.hooks"
 import { checkSwapAddress, setClaimStxInfo, navigateNextStep, setLockStxInfo, startSwap, useLoadingInitSwapState, useReceiveTokenAddressState, useReceiveTokenState, useReceiveValueState, useSendSwapStatusState, useSendTokenState, useSwapStepState } from "./hooks/swap-btc.hooks"
 import { convertBtcToSatoshis } from "./utils/utils"
 
-export const InsertAddress = () => {
+export const StackInsertAddress = () => {
   const [sendToken, ] = useSendTokenState();
   const [receiveToken, ] = useReceiveTokenState();
   const [receiveTokenAddress, setReceiveTokenAddress] = useReceiveTokenAddressState();
@@ -35,6 +35,7 @@ export const InsertAddress = () => {
   const [step, ] = useSwapStepState();
   useRouteHeader(<Header title={`Step 1`} onClose={() => navigate(RouteUrls.BuyBitcoin)}/>);
   const isLightning = sendToken.includes('⚡');
+  console.log('stack-btc insert-address isLightning ', isLightning, sendToken);
 
   useEffect(() => {
     let stxAddress = currentAccount ? currentAccount.address : "";
@@ -49,16 +50,17 @@ export const InsertAddress = () => {
   }, []);
 
   const handleClick = () => {
+    console.log('stack-btc insert-address isLightning  _setReverseClaimStxInfo', isLightning);
     if (isLightning) {
       _checkLnSwapAddress(() => _startLnSwap({
         setSwapStatus: (data: any) => setLnSwapStatus(data),
         setLockupTokenTx: (data: any) => setLockupTokenTx(data),
         setClaimStxInfo: _setReverseClaimStxInfo,
-        navigateSendSwapToken: () => navigate(RouteUrls.SendSwapTx),
-        navigateReceiveSwapToken: () => navigate(RouteUrls.ReceiveSwapTx),
-        navigateClaimToken: () => navigate(RouteUrls.ClaimToken),
-        navigateTimelockExpired: () => navigate(RouteUrls.SendSwapTx),
-        navigateEndSwap: () => navigate(RouteUrls.EndSwap)
+        navigateSendSwapToken: () => navigate(RouteUrls.SendStackSwapTx),
+        navigateReceiveSwapToken: () => navigate(RouteUrls.StackReceiveSwapTx),
+        navigateClaimToken: () => navigate(RouteUrls.StackClaimToken),
+        navigateTimelockExpired: () => navigate(RouteUrls.SendStackSwapTx),
+        navigateEndSwap: () => navigate(RouteUrls.StackEndSwap)
       }));
     } else {
       _checkSwapAddress(() => _startSwap({
@@ -75,11 +77,10 @@ export const InsertAddress = () => {
   }
 
   const getTitle = () => {
-    console.log('buy-btc receivetoken: ', receiveToken)
     if (receiveToken === 'STX' || receiveToken === 'BTC') {
       return (
         <Text textAlign={['left', 'center']}>
-          Insert {receiveToken} address
+          You will stack {receiveAmount} {receiveToken}
         </Text>
       )
     } else if (receiveToken === 'BTC ⚡') {
@@ -102,7 +103,7 @@ export const InsertAddress = () => {
         textAlign='center'
       >
         {getTitle()}
-        <Box position="relative">
+        {/* <Box position="relative">
           <Input
             display="block"
             type="text"
@@ -111,7 +112,7 @@ export const InsertAddress = () => {
             value={receiveTokenAddress}
             onChange={(e) => setReceiveTokenAddress((e.target as HTMLInputElement).value)}
           />
-        </Box>
+        </Box> */}
         <Button
           size="md"
           pl="base-tight"
@@ -124,7 +125,7 @@ export const InsertAddress = () => {
           borderRadius="10px"
           isDisabled={loadingInitSwap}
         >
-          <Text>Next</Text>
+          <Text>Confirm</Text>
         </Button>
       </Stack>
     </CenteredPageContainer>

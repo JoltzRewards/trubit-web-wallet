@@ -31,6 +31,7 @@ import { useOnWalletLock } from './hooks/use-on-wallet-lock';
 import { useOnSignOut } from './hooks/use-on-sign-out';
 import { BitcoinAccount } from '@app/pages/btc-account/btc-account';
 import { BuyBtcFormBase } from '@app/pages/buy-btc/buy-btc';
+import { StackBtcFormBase } from '@app/pages/stack-btc/stack-btc';
 import { MyDataVault } from '@app/pages/data-vault/my-data-vault';
 import { ConnectDataVault } from '@app/pages/data-vault/connect-data-vault';
 import { DataSources } from '@app/pages/data-sources/data-sources-list';
@@ -43,12 +44,17 @@ import { ProfileInformation } from '@app/pages/data-sources/components/profile-i
 import { LocationInformation } from '@app/pages/data-sources/components/location-information';
 import { ReceiveBitcoin } from '@app/pages/btc-account/components/receive-btc';
 import { InsertAddress } from '@app/pages/buy-btc/insert-address';
+import { StackInsertAddress } from '@app/pages/stack-btc/insert-address';
 import { SendSwapTransaction } from '@app/pages/buy-btc/send-swap-transaction';
+import { StackSendSwapTransaction } from '@app/pages/stack-btc/send-swap-transaction';
 import { ClaimToken } from '@app/pages/buy-btc/claim-token';
+import { StackClaimToken } from '@app/pages/stack-btc/claim-token';
 import { ReceiveSwapTransaction } from '@app/pages/buy-btc/receive-swap-transaction';
+import { StackReceiveSwapTransaction } from '@app/pages/stack-btc/receive-swap-transaction';
 import { EndSwap } from '@app/pages/buy-btc/end-swap';
 import { BitcoinRewards } from '@app/pages/btc-rewards/BitcoinRewards';
 import { BitcoinRewardsLearnMore } from '@app/pages/btc-rewards/BitcoinRewardsLearnMore';
+import { StackEndSwap } from '@app/pages/stack-btc/end-swap';
 
 export function AppRoutes(): JSX.Element | null {
   const { hasRehydratedVault } = useWallet();
@@ -251,6 +257,16 @@ export function AppRoutes(): JSX.Element | null {
           }
         />
         <Route
+          path={RouteUrls.StackBitcoin}
+          element={
+            <AccountGate>
+              <Suspense fallback={<></>}>
+                <StackBtcFormBase />
+              </Suspense>
+            </AccountGate>
+          }
+        />
+        <Route
           path={RouteUrls.ReceiveBitcoin}
           element={
             <AccountGate>
@@ -281,11 +297,31 @@ export function AppRoutes(): JSX.Element | null {
           }
         />
         <Route
+          path={RouteUrls.StackInsertAddress}
+          element={
+            <AccountGate>
+              <Suspense fallback={<></>}>
+                <StackInsertAddress />
+              </Suspense>
+            </AccountGate>
+          }
+        />
+        <Route
           path={RouteUrls.SendSwapTx}
           element={
             <AccountGate>
               <Suspense fallback={<></>}>
                 <SendSwapTransaction />
+              </Suspense>
+            </AccountGate>
+          }
+        />
+        <Route
+          path={RouteUrls.SendStackSwapTx}
+          element={
+            <AccountGate>
+              <Suspense fallback={<></>}>
+                <StackSendSwapTransaction />
               </Suspense>
             </AccountGate>
           }
@@ -301,6 +337,16 @@ export function AppRoutes(): JSX.Element | null {
           }
         />
         <Route
+          path={RouteUrls.StackReceiveSwapTx}
+          element={
+            <AccountGate>
+              <Suspense fallback={<></>}>
+                <StackReceiveSwapTransaction />
+              </Suspense>
+            </AccountGate>
+          }
+        />
+        <Route
           path={RouteUrls.ClaimToken}
           element={
             <AccountGate>
@@ -311,11 +357,31 @@ export function AppRoutes(): JSX.Element | null {
           }
         />
         <Route
+          path={RouteUrls.StackClaimToken}
+          element={
+            <AccountGate>
+              <Suspense fallback={<></>}>
+                <StackClaimToken />
+              </Suspense>
+            </AccountGate>
+          }
+        />
+        <Route
           path={RouteUrls.EndSwap}
           element={
             <AccountGate>
               <Suspense fallback={<></>}>
                 <EndSwap />
+              </Suspense>
+            </AccountGate>
+          }
+        />
+        <Route
+          path={RouteUrls.StackEndSwap}
+          element={
+            <AccountGate>
+              <Suspense fallback={<></>}>
+                <StackEndSwap />
               </Suspense>
             </AccountGate>
           }

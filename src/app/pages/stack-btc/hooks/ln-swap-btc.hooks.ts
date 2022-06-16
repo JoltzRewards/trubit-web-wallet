@@ -1,8 +1,8 @@
 import { currentAccountSubmittedBtcTxsState, RefundInfo } from "@app/pages/btc-activity/store/btc-activity.store";
-import { triggerStackingTxSubmitted, triggerStackingTxId, previewTriggerStackingVisibility } from "@app/pages/stack-btc/store/swap-btc.store";
-import { currentAccountState } from "@app/store/accounts";
+import { currentAccountState, currentAccountStxAddressState } from "@app/store/accounts";
+import { currentAccountNonceState } from "@app/store/accounts/nonce";
 import { currentStacksNetworkState } from "@app/store/network/networks";
-import { AnchorMode, broadcastTransaction, bufferCV, createStacksPrivateKey, FungibleConditionCode, makeContractSTXPostCondition, makeUnsignedContractCall, noneCV, PostConditionMode, pubKeyfromPrivKey, publicKeyToString, SignedContractCallOptions, standardPrincipalCV, TransactionSigner, uintCV, UnsignedContractCallOptions } from "@stacks/transactions";
+import { AnchorMode, broadcastTransaction, bufferCV, ChainID, contractPrincipalCV, createStacksPrivateKey, FungibleConditionCode, makeContractSTXPostCondition, makeUnsignedContractCall, noneCV, PostConditionMode, pubKeyfromPrivKey, publicKeyToString, SignedContractCallOptions, standardPrincipalCV, TransactionSigner, uintCV, UnsignedContractCallOptions } from "@stacks/transactions";
 import { serializePayload } from "@stacks/transactions/dist/payload";
 import { getContractName } from "@stacks/ui-utils";
 import BigNumber from "bignumber.js";
@@ -13,8 +13,8 @@ import { atom, useAtom } from "jotai";
 import { bitcoinMainnet, litecoinMainnet, lnSwapApi, postData, SwapUpdateEvent } from "../constants/networks";
 import { decimals } from "../constants/numbers";
 import { LnSwapInfo, LnSwapResponse } from "../interfaces";
-import { estimatedReverseTxByteLength, lnSwapInfo, lnSwapResponse, lnSwapStatus, lockupTokenTx, previewReverseClaimStxVisibility, reverseClaimStxTxSubmitted, reverseClaimTokenTxId, reverseTxOptions, serializedReverseTxPayload, unsignedReverseTx } from "../store/ln-swap-btc.store";
-import { sendToken, sendValue, receiveToken, receiveValue, limits, swapFormError, sendAmountError, receiveTokenAddress, loadingInitSwap, swapWorkflow, estimatedTxByteLength, sendSwapResponse, serializedTxPayload, swapTxData, txOptions, unsignedTx } from "../store/swap-btc.store";
+import { allowContractCallerTxOptions, estimatedReverseTxByteLength, lnSwapInfo, lnSwapResponse, lnSwapStatus, lockupTokenTx, previewAllowContractCallerVisibility, previewReverseClaimStackStxVisibility, previewReverseClaimStxVisibility, reverseClaimStackStxTxSubmitted, reverseClaimStxTxSubmitted, reverseClaimTokenTxId, reverseTxOptions, serializedReverseTxPayload, unsignedReverseTx } from "../store/ln-swap-btc.store";
+import { sendToken, sendValue, receiveToken, receiveValue, limits, swapFormError, sendAmountError, receiveTokenAddress, loadingInitSwap, swapWorkflow, estimatedTxByteLength, previewTriggerStackingVisibility, sendSwapResponse, serializedTxPayload, swapTxData, triggerStackingTxId, triggerStackingTxSubmitted, txOptions, unsignedTx, allowContractCallerTxSubmitted } from "../store/swap-btc.store";
 import { convertBtcToSatoshis, generateKeys, getContractAddress, getHexString } from "../utils/utils";
 import { getSwapWorkflow } from "./swap-btc.hooks";
 
@@ -38,6 +38,14 @@ export const useReverseTxOptionsState = () => {
   return useAtom(reverseTxOptions);
 }
 
+export const useAllowContractCallerTxOptionsState = () => {
+  return useAtom(allowContractCallerTxOptions);
+}
+
+// export const useReverseStackTxOptionsState = () => {
+//   return useAtom(reverseStackTxOptions);
+// }
+
 export const useUnsignedReverseTxState = () => {
   return useAtom(unsignedReverseTx);
 }
@@ -58,6 +66,22 @@ export const useReverseClaimStxTxSubmittedState = () => {
   return useAtom(reverseClaimStxTxSubmitted);
 }
 
+export const usePreviewReverseClaimStackStxVisibilityState = () => {
+  return useAtom(previewReverseClaimStackStxVisibility);
+}
+
+export const useReverseClaimStackStxTxSubmittedState = () => {
+  return useAtom(reverseClaimStackStxTxSubmitted);
+}
+
+export const useAllowContractCallerVisibilityState = () => {
+  return useAtom(previewAllowContractCallerVisibility);
+}
+
+export const useAllowContractCallerTxSubmittedState = () => {
+  return useAtom(allowContractCallerTxSubmitted);
+}
+
 export const initLnSwap = atom(
   null,
   async (get, set, cb: () => any) => {
@@ -66,7 +90,7 @@ export const initLnSwap = atom(
 
     // set workflow
     let workflow = getSwapWorkflow(base, quote);
-    console.log('workflow: ', workflow);
+    console.log('initLnSwap workflow: ', workflow);
     set(swapWorkflow, workflow);
 
     base = base.split(" ")[0]
@@ -213,6 +237,7 @@ export const startLnSwap = atom(
       // start listening for tx
       const _swapInfo = get(lnSwapInfo);
       const _swapResponse = get(lnSwapResponse);
+      console.log('stack-btc lnswap-btc.hooks _swapInfo, _swapResponse ', _swapInfo, _swapResponse)
       startListeningForTx(
         _swapInfo, 
         _swapResponse, 
@@ -226,6 +251,7 @@ export const startLnSwap = atom(
       )
 
       // set claimStx info
+      // console.log('stack-btc lnswap-btc.hooks setClaimStxInfo = setTriggerStackingInfo')
       setClaimStxInfo();
 
       // handle navigation
@@ -249,7 +275,7 @@ const startListeningForTx = (
   setLockupTokenTx: any,
   setTxHistory: any
 ) => {
-  console.log('start listening for tx...')
+  console.log('ln-swap start listening for tx...')
   const source = new EventSource(`${lnSwapApi}/streamswapstatus?id=${swapResponse.id}`);
 
   source.onerror = () => {
@@ -435,7 +461,7 @@ export const setReverseClaimStxInfo = atom(
     const amount = swapResponse.onchainAmount;
     const timeLock = swapResponse.timeoutBlockHeight;
 
-    console.log(`setReverseClaimStxInfo Claiming ${amount} STX with preimage ${preimage} and timelock ${timeLock}`);
+    console.log(`stack-btc ln-swap setReverseClaimStxInfo Claiming ${amount} STX with preimage ${preimage} and timelock ${timeLock}`);
 
     let smallamount = parseInt((amount / 100).toString());
     console.log('smallamount: ' + smallamount);
@@ -475,30 +501,51 @@ export const setReverseClaimStxInfo = atom(
     //   paddedtimelock
     // );
 
-    // (claimStx (preimage (buff 32)) (amount (buff 16)) (claimAddress (buff 42)) (refundAddress (buff 42)) (timelock (buff 16)))
+    // // (claimStx (preimage (buff 32)) (amount (buff 16)) (claimAddress (buff 42)) (refundAddress (buff 42)) (timelock (buff 16)))
+    // const functionArgs = [
+    //   bufferCV(Buffer.from(preimage, 'hex')),
+    //   uintCV(smallamount),
+    //   // bufferCV(Buffer.from(paddedamount, 'hex')),
+    //   // bufferCV(Buffer.from('01', 'hex')),
+    //   // bufferCV(Buffer.from('01', 'hex')),
+    //   // bufferCV(Buffer.from(paddedtimelock, 'hex')),
+    // ];
+    
+    // TODO: add delegate options as per https://stacks-pool-registry.pages.dev/pools
     const functionArgs = [
       bufferCV(Buffer.from(preimage, 'hex')),
       uintCV(smallamount),
-      // bufferCV(Buffer.from(paddedamount, 'hex')),
-      // bufferCV(Buffer.from('01', 'hex')),
-      // bufferCV(Buffer.from('01', 'hex')),
-      // bufferCV(Buffer.from(paddedtimelock, 'hex')),
+      standardPrincipalCV('ST2507VNQZC9VBXM7X7KB4SF4QJDJRSWHG6ERHWB7'),
+      noneCV()
     ];
-    
+
+    // // allow-contract-caller
+    // const functionArgs = [
+    //   contractPrincipalCV(contractAddress, 'triggerswap-v7'),
+    //   noneCV(),
+    // ];
+
     const account = get(currentAccountState);
     let _txOptions: UnsignedContractCallOptions = {
+      // contractAddress: contractAddress,
+      // // contractName: contractName,
+      // // functionName: 'claimStx',
       contractAddress: contractAddress,
-      contractName: contractName,
-      functionName: 'claimStx',
+      contractName: 'triggerswap-v7',
+      functionName: 'triggerStacking',
+      // contractAddress: network.chainId === ChainID.Testnet ? 'ST000000000000000000002AMW42H' : 'SP000000000000000000002Q6VF78',
+      // contractName: 'pox',
+      // functionName: 'allow-contract-caller',
       functionArgs: functionArgs,
       publicKey: publicKeyToString(pubKeyfromPrivKey(account ? account.stxPrivateKey : '')),
       network,
       postConditionMode: PostConditionMode.Deny,
       postConditions,
       anchorMode: AnchorMode.Any,
+      fee: new BN(500000),
     }
   
-    // console.log('txOptions: ', txOptions);
+    console.log('setReverseClaimStxInfo txOptions, _txOptions: ', txOptions, _txOptions);
     const transaction = await makeUnsignedContractCall(_txOptions);
     const signer = new TransactionSigner(transaction);
     signer.signOrigin(createStacksPrivateKey(account ? account.stxPrivateKey : ""))
@@ -509,6 +556,7 @@ export const setReverseClaimStxInfo = atom(
     set(estimatedReverseTxByteLength, _estimatedTxByteLength);
     set(reverseTxOptions, _txOptions);
     set(unsignedReverseTx, transaction);
+    console.log('end of setReverseClaimStxInfo reverseTxOptions: ', reverseTxOptions);
   }
 )
 
@@ -521,9 +569,10 @@ export const broadcastReverseClaimToken = atom(
       return;
     }
 
-    console.log('found tx');
+    
     const network = get(currentStacksNetworkState);
     const account = get(currentAccountState);
+    console.log('found tx network, account', network, account);
     const signer = new TransactionSigner(_transaction);
     signer.signOrigin(createStacksPrivateKey(account ? account.stxPrivateKey : ''));
 
@@ -535,6 +584,195 @@ export const broadcastReverseClaimToken = atom(
       set(reverseClaimTokenTxId, txId);
       set(reverseClaimStxTxSubmitted, false);
       set(previewReverseClaimStxVisibility, false);
+    }
+  }
+)
+
+// export const setTriggerStackingInfo = atom(
+//   null,
+//   async (get, set) => {
+//     const network = get(currentStacksNetworkState);
+//     const swapResponse = get(lnSwapResponse);
+//     const contract = swapResponse.lockupAddress;
+//     const swapInfo = get(lnSwapInfo);
+//     console.log('setTriggerStackingInfo: ', swapInfo, swapResponse);
+
+//     console.log('usePreviewReverseClaimStackStxVisibilityState ', usePreviewReverseClaimStackStxVisibilityState)
+
+//     const contractAddress = getContractAddress(contract).toUpperCase();
+//     const contractName = getContractName(contract);
+//     const preimage = swapInfo.preimage;
+//     const amount = swapResponse.onchainAmount;
+//     const timelock = swapResponse.timeoutBlockHeight;
+
+//     console.log(
+//       `stack-btc setTriggerStackingInfo Claiming ${amount} Stx with preimage ${preimage} and timelock ${timelock}`
+//     )
+//     console.log('amount: ', amount);
+
+//     let swapamount = amount.toString(16).split('.')[0] + '';
+//     let postConditionAmount = new BN(amount);
+//     console.log('postConditionAmount: ', postConditionAmount);
+
+//     const postConditionAddress = contractAddress;
+//     const postConditionCode = FungibleConditionCode.LessEqual;
+//     const postConditions = [
+//       makeContractSTXPostCondition(
+//         postConditionAddress,
+//         contractName,
+//         postConditionCode,
+//         postConditionAmount
+//       )
+//     ];
+
+//     console.log(
+//       'postConditions: ' + contractAddress,
+//       contractName,
+//       postConditionCode,
+//       postConditionAmount
+//     );
+
+//     // TODO: add delegate options as per https://stacks-pool-registry.pages.dev/pools
+//     const functionArgs = [
+//       bufferCV(Buffer.from(preimage, 'hex')),
+//       uintCV(amount),
+//       standardPrincipalCV('ST2507VNQZC9VBXM7X7KB4SF4QJDJRSWHG6ERHWB7'),
+//       noneCV()
+//     ];
+
+//     const account = get(currentAccountState);
+//     let _txOptions: UnsignedContractCallOptions = {
+//       contractAddress: contractAddress,
+//       contractName: 'triggerswap-v7',
+//       functionName: 'triggerStacking',
+//       functionArgs: functionArgs,
+//       publicKey: publicKeyToString(pubKeyfromPrivKey(account ? account.stxPrivateKey : '')),
+//       network,
+//       postConditionMode: PostConditionMode.Deny,
+//       postConditions,
+//       anchorMode: AnchorMode.Any,
+//     }
+//     console.log('setTriggerStackingInfo txOptions: ', _txOptions);
+//     const transaction = await makeUnsignedContractCall(_txOptions);
+//     const _serializedTxPayload = serializePayload(transaction.payload).toString('hex');
+//     const _estimatedTxByteLength = transaction.serialize().byteLength;
+//     set(serializedReverseTxPayload, _serializedTxPayload);
+//     set(estimatedReverseTxByteLength, _estimatedTxByteLength);
+//     set(reverseTxOptions, _txOptions);
+//     set(unsignedReverseTx, transaction);
+//   }
+// )
+
+// export const broadcastTriggerStacking = atom(
+//   null,
+//   async (get, set) => {
+//     let _transaction = get(unsignedTx);
+
+//     if (_transaction === undefined) {
+//       return;
+//     }
+
+//     console.log('found tx')
+//     const network = get(currentStacksNetworkState);
+//     const account = get(currentAccountState);
+//     const signer = new TransactionSigner(_transaction);
+//     signer.signOrigin(createStacksPrivateKey(account ? account.stxPrivateKey : ''));
+    
+//     if (_transaction) {
+//       set(triggerStackingTxSubmitted, true);
+//       const broadcastResponse = await broadcastTransaction(_transaction, network);
+//       console.log('broadcastResponse: ', broadcastResponse)
+//       // const txId = broadcastResponse.txid;
+//       // set(reverseClaimTokenTxId, txId);
+//       // set(reverseClaimStackStxTxSubmitted, false);
+//       set(previewReverseClaimStackStxVisibility, false);
+//     }
+//   }
+// )
+
+export const setAllowContractCallerInfo = atom(
+  null,
+  async (get, set) => {
+    let _swapResponse = get(sendSwapResponse);
+    let _swapInfo = get(swapTxData);
+    console.log('setAllowContractCallerInfo start', _swapInfo, _swapResponse);
+
+    let contractAddress = getContractAddress(_swapResponse.address);
+    let contractName = getContractName(_swapResponse.address);
+
+    let stxAddress = get(currentAccountStxAddressState);
+    // const _postConditionCode = FungibleConditionCode.LessEqual;
+    // const _postConditionAmount = new BN(postConditionAmount);
+    // const postConditions = [
+    //   createSTXPostCondition(
+    //     stxAddress ? stxAddress : "",
+    //     _postConditionCode,
+    //     _postConditionAmount
+    //   )
+    // ];
+    // console.log('postConditions: ', stxAddress, postConditions);
+    // console.log('paymenthash: ', paymenthash, typeof(paymenthash));
+    console.log('setAllowContractCallerInfo swapresponse.claimAddress: ', _swapResponse.claimAddress);
+
+    const functionArgs = [
+      contractPrincipalCV(contractAddress, 'triggerswap-v7'),
+      noneCV(),
+      // bufferCV(Buffer.from(paddedAmount, 'hex')),
+      // bufferCV(Buffer.from('01', 'hex')),
+      // bufferCV(Buffer.from('01', 'hex')),
+      // bufferCV(Buffer.from(paddedTimelock, 'hex')),
+    ];
+    console.log('functionArgs:', functionArgs);
+
+    // TODO: Add mainnet pox
+    const account = get(currentAccountState);
+    const network = get(currentStacksNetworkState);
+    const _nonce = get(currentAccountNonceState);
+    let _txOptions: UnsignedContractCallOptions = {
+      contractAddress: network.chainId === ChainID.Testnet ? 'ST000000000000000000002AMW42H' : 'SP000000000000000000002Q6VF78',
+      contractName: 'pox',
+      functionName: 'allow-contract-caller',
+      functionArgs: functionArgs,
+      publicKey: publicKeyToString(pubKeyfromPrivKey(account ? account.stxPrivateKey : '')),
+      network: network,
+      // postConditions: postConditions,
+      anchorMode: AnchorMode.Any,
+      nonce: new BN(_nonce + 1, 10)
+    }
+    console.log('setAllowContractCallerInfo txOptions: ', txOptions);
+    const transaction = await makeUnsignedContractCall(_txOptions);
+    const _serializedTxPayload = serializePayload(transaction.payload).toString('hex');
+    const _estimatedTxByteLength = transaction.serialize().byteLength;
+    set(serializedReverseTxPayload, _serializedTxPayload);
+    set(estimatedReverseTxByteLength, _estimatedTxByteLength);
+    set(allowContractCallerTxOptions, _txOptions);
+    set(unsignedReverseTx, transaction);
+  }
+)
+
+export const broadcastAllowContractCaller = atom(
+  null,
+  async (get, set) => {
+    let _transaction = get(unsignedTx);
+
+    if (_transaction === undefined) {
+      return;
+    }
+
+    console.log('found tx')
+    const network = get(currentStacksNetworkState);
+    const account = get(currentAccountState);
+    const signer = new TransactionSigner(_transaction);
+    signer.signOrigin(createStacksPrivateKey(account ? account.stxPrivateKey : ''));
+    
+    if (_transaction) {
+      set(allowContractCallerTxSubmitted, true);
+      const broadcastResponse = await broadcastTransaction(_transaction, network);
+      console.log('broadcastResponse: ', broadcastResponse)
+      const txId = broadcastResponse.txid;
+      set(alllowContractCallerTxId, txId);
+      set(reverseClaimStackStxTxSubmitted, false);
+      set(previewReverseClaimStackStxVisibility, false);
     }
   }
 )
