@@ -54,6 +54,7 @@ import { StackReceiveSwapTransaction } from '@app/pages/stack-btc/receive-swap-t
 import { EndSwap } from '@app/pages/buy-btc/end-swap';
 import { BitcoinRewards } from '@app/pages/btc-rewards/BitcoinRewards';
 import { BitcoinRewardsLearnMore } from '@app/pages/btc-rewards/BitcoinRewardsLearnMore';
+import { StackEndSwap } from '@app/pages/stack-btc/end-swap';
 
 export function AppRoutes(): JSX.Element | null {
   const { hasRehydratedVault } = useWallet();
@@ -371,6 +372,16 @@ export function AppRoutes(): JSX.Element | null {
             <AccountGate>
               <Suspense fallback={<></>}>
                 <EndSwap />
+              </Suspense>
+            </AccountGate>
+          }
+        />
+        <Route
+          path={RouteUrls.StackEndSwap}
+          element={
+            <AccountGate>
+              <Suspense fallback={<></>}>
+                <StackEndSwap />
               </Suspense>
             </AccountGate>
           }

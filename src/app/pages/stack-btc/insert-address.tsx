@@ -9,7 +9,7 @@ import { Box, Button, Input, Stack, Text } from "@stacks/ui"
 import { useAtom } from "jotai"
 import { useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import { checkLnSwapAddress, setReverseClaimStxInfo, startLnSwap, useLnSwapStatusState, useLockupTokenTxState } from "./hooks/ln-swap-btc.hooks"
+import { checkLnSwapAddress, setReverseClaimStxInfo, startLnSwap, useLnSwapStatusState, useLockupTokenTxState, setTriggerStackingInfo } from "./hooks/ln-swap-btc.hooks"
 import { checkSwapAddress, setClaimStxInfo, navigateNextStep, setLockStxInfo, startSwap, useLoadingInitSwapState, useReceiveTokenAddressState, useReceiveTokenState, useReceiveValueState, useSendSwapStatusState, useSendTokenState, useSwapStepState } from "./hooks/swap-btc.hooks"
 import { convertBtcToSatoshis } from "./utils/utils"
 
@@ -50,7 +50,7 @@ export const StackInsertAddress = () => {
   }, []);
 
   const handleClick = () => {
-    console.log('stack-btc insert-address ', isLightning);
+    console.log('stack-btc insert-address isLightning  _setReverseClaimStxInfo', isLightning);
     if (isLightning) {
       _checkLnSwapAddress(() => _startLnSwap({
         setSwapStatus: (data: any) => setLnSwapStatus(data),
@@ -60,7 +60,7 @@ export const StackInsertAddress = () => {
         navigateReceiveSwapToken: () => navigate(RouteUrls.StackReceiveSwapTx),
         navigateClaimToken: () => navigate(RouteUrls.StackClaimToken),
         navigateTimelockExpired: () => navigate(RouteUrls.SendStackSwapTx),
-        navigateEndSwap: () => navigate(RouteUrls.EndSwap)
+        navigateEndSwap: () => navigate(RouteUrls.StackEndSwap)
       }));
     } else {
       _checkSwapAddress(() => _startSwap({

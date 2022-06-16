@@ -11,8 +11,8 @@ import { microStxToStx } from "@stacks/ui-utils"
 import { useAtom } from "jotai"
 import { useNavigate } from "react-router-dom"
 import { CallContractConfirmDrawer } from "./components/call-contract-confirm-drawer"
-import { broadcastReverseClaimToken, useLnSwapResponseState, usePreviewReverseClaimStxVisibilityState, useReverseClaimStxTxSubmittedState, useReverseClaimTokenTxId, useReverseTxOptionsState, useUnsignedReverseTxState, } from "./hooks/ln-swap-btc.hooks"
-import { broadcastClaimStx, claimBtc, useClaimStxTxIdState, useClaimStxTxSubmittedState, usePreviewClaimStxVisibilityState, useReceiveTokenState, useSendSwapResponseState, useSendTokenState, useTxOptionsState, useUnsignedTxState } from "./hooks/swap-btc.hooks"
+import { broadcastAllowContractCaller, broadcastReverseClaimToken, broadcastTriggerStacking, useAllowContractCallerTxOptionsState, useAllowContractCallerVisibilityState, useLnSwapResponseState, usePreviewReverseClaimStackStxVisibilityState, usePreviewReverseClaimStxVisibilityState, useReverseClaimStackStxTxSubmittedState, useReverseClaimStxTxSubmittedState, useReverseClaimTokenTxId, useReverseStackTxOptionsState, useReverseTxOptionsState, useUnsignedReverseTxState, } from "./hooks/ln-swap-btc.hooks"
+import { broadcastClaimStx, claimBtc, useClaimStxTxIdState, useClaimStxTxSubmittedState, usePreviewClaimStackStxVisibilityState, usePreviewClaimStxVisibilityState, useReceiveTokenState, useSendSwapResponseState, useSendTokenState, useTxOptionsState, useUnsignedTxState } from "./hooks/swap-btc.hooks"
 
 export const StackClaimToken = () => {
   const [sendToken, ] = useSendTokenState();
@@ -21,7 +21,7 @@ export const StackClaimToken = () => {
 
   // swap state
   const [swapResponse, ] = useSendSwapResponseState();
-  const [previewClaimStxVisibility, setPreviewClaimStxVisibility] = usePreviewClaimStxVisibilityState();
+  const [previewClaimStackStxVisibility, setPreviewClaimStackStxVisibility] = usePreviewClaimStackStxVisibilityState();
   const [claimStxTxSubmitted, ] = useClaimStxTxSubmittedState();
   const [claimStxTxId, ] = useClaimStxTxIdState();
   const [txOptions, ] = useTxOptionsState();
@@ -30,15 +30,19 @@ export const StackClaimToken = () => {
 
   // reverse swap state
   const [lnSwapResponse, ] = useLnSwapResponseState();
-  const [previewReverseClaimStxVisibility, setPreviewReverseClaimStxVisibility] = usePreviewReverseClaimStxVisibilityState()
-  const [reverseClaimStxTxSubmitted, ] = useReverseClaimStxTxSubmittedState();
+  const [previewReverseClaimStackStxVisibility, setPreviewReverseClaimStackStxVisibility] = usePreviewReverseClaimStackStxVisibilityState()
+  const [previewAllowContractCallerVisibility, setPreviewAllowContractCallerVisibility] = useAllowContractCallerVisibilityState()
+  const [reverseClaimStxTxSubmitted, ] = useReverseClaimStackStxTxSubmittedState();
   const [reverseClaimTokenTxId, ] = useReverseClaimTokenTxId();
   const [reverseTxOptions, ] = useReverseTxOptionsState();
+  const [allowContractCallerTxOptions, ] = useAllowContractCallerTxOptionsState();
+  console.log('claim-token reverseTxOptions ', reverseTxOptions);
   const [unsignedReverseTx, ] = useUnsignedReverseTxState();
   const [, _broadcastReverseClaimToken] = useAtom(broadcastReverseClaimToken);
+  const [, _broadcastAllowContractCaller] = useAtom(broadcastAllowContractCaller);
 
   const navigate = useNavigate();
-  useRouteHeader(<Header title="Step 4" onClose={() => navigate(RouteUrls.BuyBitcoin)}/>);
+  useRouteHeader(<Header title="Step 4" onClose={() => navigate(RouteUrls.StackBitcoin)}/>);
 
   const getClaimTokenContent = () => {
     if (receiveToken === 'STX') {
@@ -65,7 +69,7 @@ export const StackClaimToken = () => {
             Transaction ID: {lnSwapResponse.id}
           </Text>
           <Text textAlign={['left', 'center']}>
-            Lockup is confirmed, you can now trigger the contract call to finalize the swap and stack your <b>{receiveToken}</b>
+            Lockup is confirmed, you can now allow contract to delegate on your behalf and trigger the contract call to finalize the swap and stack your <b>{receiveToken}</b>
           </Text>
           {
             reverseClaimTokenTxId !== '' &&
@@ -86,7 +90,23 @@ export const StackClaimToken = () => {
             fontSize={2}
             mode="primary"
             position="relative"
-            onClick={() => setPreviewReverseClaimStxVisibility(true)}
+            onClick={() => setPreviewAllowContractCallerVisibility(true)}
+            // onClick={() => console.log('onClick ClaimReverseStxContent previewReverseClaimStackStxVisibility ', previewReverseClaimStackStxVisibility, reverseTxOptions)}
+            borderRadius="10px"
+            // isDisabled={loadingInitSwap}
+          >
+            <Text>Allow Contract Caller</Text>
+          </Button>
+          <Button
+            size="md"
+            pl="base-tight"
+            pr={'base'}
+            py="tight"
+            fontSize={2}
+            mode="primary"
+            position="relative"
+            onClick={() => setPreviewReverseClaimStackStxVisibility(true)}
+            // onClick={() => console.log('onClick ClaimReverseStxContent previewReverseClaimStackStxVisibility ', previewReverseClaimStackStxVisibility, reverseTxOptions)}
             borderRadius="10px"
             // isDisabled={loadingInitSwap}
           >
@@ -95,12 +115,29 @@ export const StackClaimToken = () => {
         </Stack>
         <CallContractConfirmDrawer
           amount={microStxToStx((lnSwapResponse.onchainAmount / 100).toFixed(8))}
+          onBroadcastTx={_broadcastAllowContractCaller}
+          // onBroadcastTx={() => console.log('onBroadcastTx do nothing')}
+          txOptions={allowContractCallerTxOptions}
+          title='Allow Delegation'
+          // disabled={reverseClaimStxTxSubmitted}
+          disabled={false}
+          isShowing={previewAllowContractCallerVisibility}
+          // isShowing={true}
+          onClose={() => setPreviewAllowContractCallerVisibility(false)}
+          // onClose={() => console.log('onClose do nothing')}
+        />
+        <CallContractConfirmDrawer
+          amount={microStxToStx((lnSwapResponse.onchainAmount / 100).toFixed(8))}
           onBroadcastTx={_broadcastReverseClaimToken}
+          // onBroadcastTx={() => console.log('onBroadcastTx do nothing')}
           txOptions={reverseTxOptions}
           title='Stack STX'
           disabled={reverseClaimStxTxSubmitted}
-          isShowing={previewReverseClaimStxVisibility}
-          onClose={() => setPreviewReverseClaimStxVisibility(false)}
+          // disabled={false}
+          isShowing={previewReverseClaimStackStxVisibility}
+          // isShowing={true}
+          onClose={() => setPreviewReverseClaimStackStxVisibility(false)}
+          // onClose={() => console.log('onClose do nothing')}
         />
       </>
     )
@@ -139,7 +176,7 @@ export const StackClaimToken = () => {
             fontSize={2}
             mode="primary"
             position="relative"
-            onClick={() => setPreviewClaimStxVisibility(true)}
+            onClick={() => setPreviewClaimStackStxVisibility(true)}
             borderRadius="10px"
             // isDisabled={loadingInitSwap}
           >
@@ -152,8 +189,8 @@ export const StackClaimToken = () => {
           txOptions={txOptions}
           title='Claim STX'
           disabled={claimStxTxSubmitted}
-          isShowing={previewClaimStxVisibility}
-          onClose={() => setPreviewClaimStxVisibility(false)}
+          isShowing={previewClaimStackStxVisibility}
+          onClose={() => setPreviewClaimStackStxVisibility(false)}
         />
       </>
     )

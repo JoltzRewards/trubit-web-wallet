@@ -36,6 +36,7 @@ export enum RouteUrls {
   ClaimToken = '/claim-token',
   StackClaimToken = '/stack-claim-token',
   EndSwap = '/end-swap',
+  StackEndSwap = '/stack-end-swap',
   // Data management
   MyDataVault = '/my-data',
   ConnectData = '/connect-data',

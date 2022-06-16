@@ -28,7 +28,10 @@ export const CallContractConfirmDrawer = (props: CallContractConfirmDrawerProps)
   const currentAccount = useCurrentAccount();
   const { handleOpenTxLink } = useExplorerLink();
 
-  if (!txOptions) return null;
+  if (!txOptions) {
+    console.log('CallContractConfirmDrawer !txOptions', txOptions);
+    return null;
+  }
   const { contractAddress, contractName, functionName } = txOptions;
 
   return (

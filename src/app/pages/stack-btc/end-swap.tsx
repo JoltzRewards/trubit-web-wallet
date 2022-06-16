@@ -7,7 +7,7 @@ import { Button, Stack, Text } from "@stacks/ui";
 import { useNavigate } from "react-router-dom";
 import { useReceiveTokenState, useReceiveValueState, useSendTokenState, useSendValueState, useSwapStepState } from "./hooks/swap-btc.hooks";
 
-export const EndSwap = () => {
+export const StackEndSwap = () => {
   const navigate = useNavigate();
   const [step, ] = useSwapStepState();
   const [sendToken, ] = useSendTokenState();
@@ -31,7 +31,7 @@ export const EndSwap = () => {
           Swap successful!
         </Text>
         <Text textAlign={['left', 'center']}>
-          You sent <b>{sendValue} {sendToken}</b> and received <b>{receiveValue} {receiveToken}</b>
+          You sent <b>{sendValue} {sendToken}</b> and received & stacked <b>{receiveValue} {receiveToken}</b>
         </Text>
         <Button
           size="md"

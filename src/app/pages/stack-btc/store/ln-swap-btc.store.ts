@@ -53,3 +53,12 @@ export const reverseTxOptions = atom<UnsignedContractCallOptions | undefined>(un
 export const unsignedReverseTx = atom<StacksTransaction | undefined>(undefined);
 export const serializedReverseTxPayload = atom<string>('');
 export const estimatedReverseTxByteLength = atom<number>(0);
+
+// reverse claim & stack token tx
+// export const reverseStackTxOptions = atom<UnsignedContractCallOptions | undefined>(undefined);
+export const reverseClaimStackStxTxSubmitted = atom(false);
+export const previewReverseClaimStackStxVisibility = atom(false);
+
+export const allowContractCallerTxOptions = atom<UnsignedContractCallOptions | undefined>(undefined);
+export const allowContractCallerTxSubmitted = atom(false);
+export const previewAllowContractCallerVisibility = atom(false);
